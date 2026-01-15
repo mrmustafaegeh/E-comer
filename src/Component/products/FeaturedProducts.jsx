@@ -1,80 +1,8 @@
-import { useEffect, useState } from "react";
+
 import Image from "next/image";
 
-export default function FeaturedProducts() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchFeatured() {
-      try {
-        const res = await fetch("/api/products/featured");
-
-        if (!res.ok) throw new Error("Failed to fetch products");
-
-        const data = await res.json();
-
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          setProducts([]);
-          setError("Invalid data format");
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setError(error.message);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchFeatured();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse"
-          >
-            <div className="bg-gray-200 aspect-square"></div>
-            <div className="p-4 space-y-3">
-              <div className="bg-gray-200 h-4 rounded w-3/4"></div>
-              <div className="bg-gray-200 h-4 rounded w-1/2"></div>
-              <div className="bg-gray-200 h-3 rounded w-1/3"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12 bg-red-50 rounded-xl border border-red-100">
-        <svg
-          className="w-16 h-16 text-red-400 mx-auto mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <p className="text-red-600 font-medium">Error loading products</p>
-        <p className="text-red-500 text-sm mt-1">{error}</p>
-      </div>
-    );
-  }
-
-  if (products.length === 0) {
+export default function FeaturedProducts({ products = [] }) {
+  if (!products || products.length === 0) {
     return (
       <div className="text-center py-16 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
         <svg

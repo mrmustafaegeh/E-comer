@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
 
   const fetchUser = useCallback(async () => {
     try {
-      const data = await get("/api/auth/session");
+      const data = await get("/auth/session");
       setUser(data?.user || null);
     } catch (err) {
       console.error("Failed to fetch user session:", err);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await post("/api/auth/logout", {});
+      await post("/auth/logout", {});
       setUser(null);
     } catch (err) {
       console.error("Logout failed:", err);
