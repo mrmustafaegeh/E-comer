@@ -2,12 +2,14 @@
 
 import { useCart } from "../../hooks/useCart";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import Image from "next/image";
 
 const CartPage = () => {
   const { t } = useTranslation();
+  const router = useRouter();
   const {
     cartItems,
     removeFromCart,
@@ -357,6 +359,7 @@ const CartPage = () => {
         <button
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-200 flex items-center justify-center font-medium shadow-lg hover:shadow-xl"
           aria-label={t("cart.checkout")}
+          onClick={() => router.push("/checkout")}
         >
           <svg
             className="w-5 h-5 mr-2"

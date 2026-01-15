@@ -27,17 +27,11 @@ export async function GET(request) {
 
     const skip = (page - 1) * limit;
 
-    const projection = {
-      userId: 1,
-      products: 1,
-      totalPrice: 1,
-      status: 1,
-      createdAt: 1,
-    };
+
 
     const [orders, total] = await Promise.all([
       col
-        .find(filter, { projection })
+        .find(filter)
         .sort(parseSort(sort))
         .skip(skip)
         .limit(limit)

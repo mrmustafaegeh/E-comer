@@ -1,11 +1,23 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/session";
 
 export async function GET(request) {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     const col = db.collection("orders");
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const query = { userId: user.id };
 
     const params = Object.fromEntries(request.nextUrl.searchParams);
     const page = Math.max(1, Number(params.page || 1));
@@ -15,7 +27,7 @@ export async function GET(request) {
     const [orders, total] = await Promise.all([
       col
         .find(
-          {},
+          query,
           {
             projection: {
               userId: 1,
@@ -23,6 +35,8 @@ export async function GET(request) {
               totalPrice: 1,
               status: 1,
               createdAt: 1,
+              shippingAddress: 1,
+              paymentMethod: 1,
             },
           }
         )
@@ -30,7 +44,7 @@ export async function GET(request) {
         .skip(skip)
         .limit(limit)
         .toArray(),
-      col.countDocuments({}),
+      col.countDocuments(query),
     ]);
 
     const response = NextResponse.json({
@@ -95,6 +109,8 @@ export async function POST(request) {
       userId,
       products,
       totalPrice,
+      shippingAddress: body.shippingAddress,
+      paymentMethod: body.paymentMethod,
       status: body.status || "processing",
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -44,7 +44,7 @@ export default function OrderTable({ orders }) {
               <tr key={id} className="border-b hover:bg-gray-50">
                 <td className="p-3">{id}</td>
                 <td className="p-3">
-                  {order?.user?.email || order?.userEmail || "-"}
+                  {order?.user?.email || order?.userEmail || order?.shippingAddress?.fullName || "-"}
                 </td>
                 <td className="p-3">{order?.status || "-"}</td>
                 <td className="p-3">${Number(total).toFixed(2)}</td>

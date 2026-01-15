@@ -138,7 +138,9 @@ export default function ProductDetailPage() {
                   <Image
                     src={img}
                     alt={`View ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 768px) 25vw, 15vw"
                   />
                 </button>
               ))}

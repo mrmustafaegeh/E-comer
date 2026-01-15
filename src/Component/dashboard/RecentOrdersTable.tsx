@@ -20,6 +20,9 @@ interface Order {
   totalPrice: number;
   createdAt: string;
   items?: any[];
+  shippingAddress?: {
+    fullName: string;
+  };
 }
 
 interface RecentOrdersTableProps {
@@ -104,7 +107,7 @@ export default function RecentOrdersTable({ orders }: RecentOrdersTableProps) {
                 </td>
                 <td className="py-3 px-4">
                   <div className="text-sm text-gray-900">
-                    {order.user?.name || order.user?.email || "Guest"}
+                    {order.user?.name || order.user?.email || order.shippingAddress?.fullName || "Guest"}
                   </div>
                   <div className="text-xs text-gray-500">
                     {order.user?.email || ""}
