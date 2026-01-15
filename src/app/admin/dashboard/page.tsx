@@ -76,140 +76,68 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
 
-      const [productsRes, ordersRes, usersRes] = await Promise.allSettled([
-        api.get("/admin/admin-products?limit=100"),
-        api.get("/admin/admin-orders?limit=10&sort=-createdAt"),
-        api.get("/admin/admin-users?limit=1"),
+      // Fetch parallel data
+      const [statsRes, recentOrdersRes, topProductsRes] = await Promise.allSettled([
+        api.get("/admin/stats"), // New server-side stats endpoint
+        api.get("/admin/admin-orders?limit=5&sort=-createdAt"),
+        api.get("/admin/admin-products?limit=5&sort=-sold"), // Assuming you maintain a sold count
       ]);
 
-      const productsPayload =
-        productsRes.status === "fulfilled" ? productsRes.value.data : null;
-      const ordersPayload =
-        ordersRes.status === "fulfilled" ? ordersRes.value.data : null;
-      const usersPayload =
-        usersRes.status === "fulfilled" ? usersRes.value.data : null;
+      const statsData =
+        statsRes.status === "fulfilled" ? (statsRes.value as any) : {};
+      const recentOrdersData =
+        recentOrdersRes.status === "fulfilled" ? (recentOrdersRes.value as any) : {};
+      
+      const realStats = statsData || {};
+      const recentOrders = recentOrdersData.orders || [];
 
-      const products: any[] = productsPayload?.products ?? [];
-      const orders: any[] = ordersPayload?.orders ?? [];
-      const users: any[] = usersPayload?.users ?? [];
-
-      const productsTotal =
-        typeof productsPayload?.total === "number"
-          ? productsPayload.total
-          : products.length;
-
-      const ordersTotal =
-        typeof ordersPayload?.total === "number"
-          ? ordersPayload.total
-          : orders.length;
-
-      const usersTotal =
-        typeof usersPayload?.total === "number"
-          ? usersPayload.total
-          : users.length;
-
-      const recentOrders = Array.isArray(orders) ? orders.slice(0, 5) : [];
-
-      const totalRevenue = Array.isArray(orders)
-        ? orders.reduce(
-            (sum: number, order: any) => sum + (Number(order.totalPrice) || 0),
-            0
-          )
-        : 0;
-
-      const mockTopProducts = (
-        Array.isArray(products) ? products.slice(0, 5) : []
-      ).map((p: any) => ({
-        id: p.id || p._id || `prod-${Math.random()}`,
-        name: p.name || p.title || "Unnamed Product",
-        sales: Math.floor(Math.random() * 100) + 50,
-        revenue: (Number(p.price) || 0) * 100,
-        stock: p.stock || 0,
-        image: p.image || p.thumbnail || "",
-      }));
-
-      const mockActivities = recentOrders.map((order: any) => ({
-        id: order.id || order._id || `act-${Math.random()}`,
-        type: "order",
-        user: order.user?.email || order.customerEmail || "Customer",
-        action: "placed an order",
-        amount: `$${Number(order.totalPrice || 0)}`,
-        time: order.createdAt || new Date().toISOString(),
-      }));
-
-      // FIXED: Ensure months array always has valid values
-      const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      const currentMonth = new Date().getMonth();
-      const mockMonthlyData: MonthlyData[] = Array.from(
-        { length: 6 },
-        (_, i) => {
-          const monthIndex = (currentMonth - 5 + i + 12) % 12;
-          // FIX: Use type assertion or ensure month is always a string
-          return {
-            month: months[monthIndex] as string, // Type assertion ensures string type
-            revenue: Math.floor(Math.random() * 10000) + 5000,
-            orders: Math.floor(Math.random() * 100) + 50,
-          };
-        }
-      );
-
-      const orderStats = {
-        pending: Array.isArray(orders)
-          ? orders.filter((o: any) => o.status === "pending").length
-          : 0,
-        processing: Array.isArray(orders)
-          ? orders.filter((o: any) => o.status === "processing").length
-          : 0,
-        delivered: Array.isArray(orders)
-          ? orders.filter((o: any) => o.status === "delivered").length
-          : 0,
-        cancelled: Array.isArray(orders)
-          ? orders.filter((o: any) => o.status === "cancelled").length
-          : 0,
-      };
+      // Fallback for monthly data if empty
+      const monthlyData =
+        realStats.monthlyData && realStats.monthlyData.length > 0
+          ? realStats.monthlyData
+          : getMockMonthlyData(); // Keep a helper for empty states
 
       setStats({
-        products: productsTotal,
-        orders: ordersTotal,
-        users: usersTotal,
-        revenue: totalRevenue,
-        orderGrowth: 12.5,
+        products: realStats.products || 0,
+        orders: realStats.orders || 0,
+        users: realStats.users || 0,
+        revenue: realStats.revenue || 0,
+        orderGrowth: 12.5, // You could calculate this too if needed
         revenueGrowth: 18.3,
         recentOrders,
-        topProducts: mockTopProducts,
-        monthlyData: mockMonthlyData,
-        activities: mockActivities,
-        orderStats,
+        topProducts: [], // You can implement a real top products endpoint later
+        monthlyData,
+        activities: generateActivities(recentOrders),
+        orderStats: realStats.orderStats || {
+          pending: 0,
+          processing: 0,
+          delivered: 0,
+          cancelled: 0,
+        },
       });
-
-      if (productsRes.status === "rejected") {
-        console.error("Products request failed:", productsRes.reason);
-      }
-      if (ordersRes.status === "rejected") {
-        console.error("Orders request failed:", ordersRes.reason);
-      }
-      if (usersRes.status === "rejected") {
-        console.error("Users request failed:", usersRes.reason);
-      }
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  // Helper for empty states
+  const getMockMonthlyData = () => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    return months.map(m => ({ month: m, revenue: 0, orders: 0 }));
+  };
+
+  const generateActivities = (orders: any[]) => {
+    return orders.map((order: any) => ({
+      id: order._id || order.id,
+      type: "order",
+      user: order.user?.email || "Customer",
+      action: "placed an order",
+      amount: `$${order.totalPrice}`,
+      time: order.createdAt,
+    }));
   };
 
   const handleRefresh = () => {

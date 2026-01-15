@@ -12,6 +12,7 @@ import {
   Settings,
   Image as ImageIcon,
   LogOut,
+  Mail,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { title: "Products", href: "/admin/admin-products", icon: Package },
   { title: "Orders", href: "/admin/order", icon: ShoppingCart },
   { title: "Customers", href: "/admin/users", icon: Users },
+  { title: "Messages", href: "/admin/messages", icon: Mail },
   { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { title: "Media Library", href: "/admin/media", icon: ImageIcon },
   { title: "Settings", href: "/admin/settings", icon: Settings },
