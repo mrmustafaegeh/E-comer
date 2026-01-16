@@ -1,15 +1,14 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 
 export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
 
-    // Run parallel aggregation queries for performance
-    const [stats] = await Promise.all([
-      // 1. Total Revenue (sum of all orders)
-      db
+    // 1. Total Revenue & Orders
+    const statsQuery = db
         .collection("orders")
         .aggregate([
           {
@@ -20,8 +19,69 @@ export async function GET() {
             },
           },
         ])
-        .toArray(),
+        .toArray();
+
+    // 2. Top Products (Get IDs and sales first)
+    const topProductsQuery = db.collection("orders").aggregate([
+        { $unwind: "$products" },
+        {
+          $group: {
+            _id: "$products.productId",
+            name: { $first: "$products.name" },
+            image: { $first: "$products.image" },
+            sales: { $sum: "$products.quantity" },
+            revenue: { $sum: { $multiply: ["$products.price", "$products.quantity"] } },
+          }
+        },
+        { $sort: { sales: -1 } },
+        { $limit: 5 }
+    ]).toArray();
+
+    // 3. Recent Activity
+    const recentActivityQuery = db.collection("orders")
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .toArray();
+
+    // Run parallel
+    const [statsResult, topProductsBasic, recentActivityData] = await Promise.all([
+        statsQuery,
+        topProductsQuery,
+        recentActivityQuery
     ]);
+
+    // 4. Manual Lookup for Top Products Stock
+    const productIds = topProductsBasic.map(p => {
+        try { return new ObjectId(p._id); } catch(e) { return null; }
+    }).filter(id => id);
+
+    const productsDetails = await db.collection("products")
+        .find({ _id: { $in: productIds } })
+        .project({ _id: 1, stock: 1 })
+        .toArray();
+    
+    // Merge details
+    const topProductsData = topProductsBasic.map(p => {
+        const details = productsDetails.find(d => d._id.toString() === p._id.toString());
+        return {
+            id: p._id,
+            name: p.name,
+            image: p.image,
+            sales: p.sales,
+            revenue: p.revenue,
+            stock: details ? details.stock : 0
+        };
+    });
+
+    const formattedActivities = recentActivityData.map(order => ({
+        id: order._id.toString(),
+        type: "order",
+        user: order.user?.email || order.shippingAddress?.fullName || "Guest",
+        action: "placed an order",
+        amount: "$" + (order.totalPrice || 0).toFixed(2),
+        time: order.createdAt
+    }));
 
     // 2. Count other entities
     const [productsCount, usersCount, pendingOrders, processingOrders] =
@@ -70,11 +130,13 @@ export async function GET() {
     });
 
     const response = {
-      revenue: stats[0]?.totalRevenue || 0,
-      orders: stats[0]?.totalOrders || 0,
+      revenue: statsResult[0]?.totalRevenue || 0,
+      orders: statsResult[0]?.totalOrders || 0,
       products: productsCount,
       users: usersCount,
       monthlyData: formattedMonthlyData,
+      topProducts: topProductsData,
+      activities: formattedActivities,
       orderStats: {
         pending: pendingOrders,
         processing: processingOrders,

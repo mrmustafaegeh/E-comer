@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
@@ -9,6 +9,14 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, CreditCard, MapPin, Truck } from "lucide-react";
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
@@ -22,7 +30,7 @@ export default function CheckoutPage() {
     city: "",
     zipCode: "",
     country: "",
-    paymentMethod: "cod", // 'cod' or 'card'
+    paymentMethod: "cod",
   });
 
   // Redirect if cart is empty
@@ -32,7 +40,7 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  // Pre-fill name/email if user exists (mock behavior for now as we only store name in address)
+  // Pre-fill name if user exists
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -48,7 +56,6 @@ export default function CheckoutPage() {
   };
 
   const calculateTotal = () => {
-    // Ensure we parse cartTotal correctly if it's a string
     const subtotal = Number(cartTotal) || 0;
     const shipping = 0; // Free shipping
     return subtotal + shipping;
@@ -62,16 +69,59 @@ export default function CheckoutPage() {
     if (!user) {
       setError("You must be logged in to place an order.");
       setLoading(false);
-      // Optional: Redirect to login with return URL
-      // router.push(`/auth/login?returnUrl=/checkout`);
       return;
     }
 
     try {
+      // Stripe Payment Flow
+      if (formData.paymentMethod === "stripe") {
+        console.log("Initiating Stripe checkout...");
+        console.log("Cart items:", cartItems);
+        
+        try {
+          const response = await post("/checkout/session", {
+            items: cartItems.map(item => ({
+              id: item.id || item._id,
+              name: item.name,
+              price: item.price,
+              qty: item.qty,
+              imgSrc: item.imgSrc || item.image,
+            })),
+            email: user?.email,
+          });
+
+          console.log("Stripe response:", response);
+
+          if (response && response.url) {
+            // Redirect to Stripe Checkout
+            window.location.href = response.url;
+            return;
+          } else {
+            throw new Error("No checkout URL returned from server");
+          }
+        } catch (stripeError) {
+          console.error("Stripe checkout error:", stripeError);
+          
+          // More detailed error handling
+          let stripeErrorMsg = "Failed to initiate Stripe checkout.";
+          
+          if (stripeError.response?.data?.error) {
+            stripeErrorMsg = stripeError.response.data.error;
+          } else if (stripeError.message) {
+            stripeErrorMsg = stripeError.message;
+          }
+          
+          setError(stripeErrorMsg + " Please try again or use Cash on Delivery.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Cash on Delivery Flow
       const orderPayload = {
-        userId: user.id || user._id, // Ensure we get the correct ID field
+        userId: user.id || user._id,
         products: cartItems.map((item) => ({
-          productId: item.id,
+          productId: item.id || item._id,
           name: item.name,
           quantity: item.qty,
           price: item.price,
@@ -89,21 +139,38 @@ export default function CheckoutPage() {
         status: "pending",
       };
 
-      await post("/orders", orderPayload); // services/api adds /api prefix -> /api/orders
+      await post("/orders", orderPayload);
 
       clearCart();
-      router.push("/orders/success"); // You'll need to create this or redirect to dashboard
+      router.push("/orders/success");
     } catch (err) {
       console.error("Checkout error:", err);
-      setError(
-        err.response?.data?.error || "Failed to place order. Please try again."
-      );
+      
+      let errorMessage = "Failed to place order. Please try again.";
+      
+      if (err.response) {
+        if (err.response.data && typeof err.response.data === 'object' && err.response.data.error) {
+           errorMessage = err.response.data.error;
+        } else if (err.response.data && typeof err.response.data === 'string') {
+           if (err.response.data.includes("<!DOCTYPE html>")) {
+             errorMessage = "Server error. Please check your connection or try again later.";
+           } else {
+             errorMessage = err.response.data;
+           }
+        } else if (err.message) {
+           errorMessage = err.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  if (cartItems.length === 0) return null; // Avoid flash while redirecting
+  if (cartItems.length === 0) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -204,7 +271,6 @@ export default function CheckoutPage() {
                     <option value="CA">Canada</option>
                     <option value="UK">United Kingdom</option>
                     <option value="AU">Australia</option>
-                    {/* Add more as needed */}
                   </select>
                 </div>
               </form>
@@ -220,7 +286,9 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors border-blue-500 bg-blue-50/50">
+                <label className={`flex items-center p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors ${
+                  formData.paymentMethod === "cod" ? "border-blue-500 bg-blue-50/50" : "border-gray-200"
+                }`}>
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -234,23 +302,21 @@ export default function CheckoutPage() {
                   </span>
                   <Truck className="ml-auto text-gray-400" size={20} />
                 </label>
-                
-                <label className="flex items-center p-4 border border-gray-200 rounded-xl cursor-not-allowed opacity-60">
+
+                <label className={`flex items-center p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors ${
+                  formData.paymentMethod === "stripe" ? "border-purple-500 bg-purple-50/50" : "border-gray-200"
+                }`}>
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="card"
-                    disabled
-                    className="w-5 h-5 text-gray-400 border-gray-300"
+                    value="stripe"
+                    checked={formData.paymentMethod === "stripe"}
+                    onChange={handleInputChange}
+                    className="w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500"
                   />
-                  <div className="ml-3">
-                    <span className="block font-medium text-gray-500">
-                      Credit/Debit Card
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      Coming soon
-                    </span>
-                  </div>
+                  <span className="ml-3 font-medium text-gray-900">
+                    Pay with Stripe
+                  </span>
                   <CreditCard className="ml-auto text-gray-400" size={20} />
                 </label>
               </div>
@@ -262,7 +328,7 @@ export default function CheckoutPage() {
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-6">
               <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
 
-              <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
@@ -319,7 +385,7 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={loading}
+                disabled={loading || !user}
                 className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -329,7 +395,7 @@ export default function CheckoutPage() {
                   </>
                 ) : (
                   <>
-                    Place Order
+                    {formData.paymentMethod === "stripe" ? "Proceed to Stripe" : "Place Order"}
                     <ArrowLeft className="rotate-180" size={20} />
                   </>
                 )}

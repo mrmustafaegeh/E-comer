@@ -13,7 +13,7 @@ export async function GET(request) {
 
   try {
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db(process.env.MONGODB_DB);
     const col = db.collection("orders");
 
     const params = Object.fromEntries(request.nextUrl.searchParams);
@@ -78,7 +78,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db(process.env.MONGODB_DB);
     const col = db.collection("orders");
 
     const body = await request.json();

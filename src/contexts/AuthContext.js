@@ -12,8 +12,11 @@ import { get, post } from "@/services/api";
 const AuthContext = createContext({
   user: null,
   loading: true,
-  refreshUser: () => {},
+  login: () => {},
+  register: () => {},
   logout: () => {},
+  refreshUser: () => {},
+  updateUser: () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -22,8 +25,25 @@ export function AuthProvider({ children }) {
 
   const fetchUser = useCallback(async () => {
     try {
-      const data = await get("/auth/session");
-      setUser(data?.user || null);
+      // First get the session to check if user is authenticated
+      const sessionData = await get("/auth/session");
+      
+      if (sessionData?.user) {
+        // Then get the full profile with image
+        try {
+          const profileData = await get("/user/profile");
+          setUser({
+            ...sessionData.user,
+            ...profileData, // This will include the image
+          });
+        } catch (profileErr) {
+          // If profile fetch fails, use session data
+          console.error("Failed to fetch profile, using session data:", profileErr);
+          setUser(sessionData.user);
+        }
+      } else {
+        setUser(null);
+      }
     } catch (err) {
       console.error("Failed to fetch user session:", err);
       setUser(null);
@@ -36,9 +56,48 @@ export function AuthProvider({ children }) {
     fetchUser();
   }, [fetchUser]);
 
-  const refreshUser = async () => {
-    setLoading(true);
-    await fetchUser();
+  const login = async (credentials) => {
+    try {
+      const data = await post("/auth/login", credentials);
+      
+      // After login, fetch full profile including image
+      try {
+        const profileData = await get("/user/profile");
+        setUser({
+          ...data.user,
+          ...profileData,
+        });
+      } catch (profileErr) {
+        setUser(data.user);
+      }
+      
+      return { success: true, user: data.user };
+    } catch (err) {
+      console.error("Login failed:", err);
+      return { success: false, error: err.message || "Login failed" };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const data = await post("/auth/register", userData);
+      
+      // After register, fetch full profile including image
+      try {
+        const profileData = await get("/user/profile");
+        setUser({
+          ...data.user,
+          ...profileData,
+        });
+      } catch (profileErr) {
+        setUser(data.user);
+      }
+      
+      return { success: true, user: data.user };
+    } catch (err) {
+      console.error("Registration failed:", err);
+      return { success: false, error: err.message || "Registration failed" };
+    }
   };
 
   const logout = async () => {
@@ -52,8 +111,42 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Memoized refreshUser to prevent infinite loops
+  const refreshUser = useCallback(async () => {
+    if (loading) return;
+    
+    try {
+      const data = await get("/user/profile");
+      if (data) {
+        setUser(prevUser => ({
+          ...prevUser,
+          ...data,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to refresh user profile:", err);
+    }
+  }, [loading]);
+
+  const updateUser = useCallback((updatedData) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      ...updatedData,
+    }));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        loading, 
+        login, 
+        register, 
+        logout, 
+        refreshUser, 
+        updateUser 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
