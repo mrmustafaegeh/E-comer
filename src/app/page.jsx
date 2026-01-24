@@ -1,11 +1,34 @@
 "use client";
 
-import { Suspense } from "react";
-import HeroSlider from "../Component/slider/HeroSlider";
-import FeaturedProducts from "../Component/products/FeaturedProducts";
-import NewsletterSignup from "../Component/features/NewLetterSignup";
+import dynamic from "next/dynamic";
 import { useCart } from "../hooks/useCart";
 import { useFeaturedProducts } from "../hooks/useProducts";
+
+// ✅ Code-split: Hero slider (usually heavy)
+const HeroSlider = dynamic(() => import("../Component/slider/HeroSlider"), {
+  ssr: false,
+  loading: () => <div className="min-h-[60vh] bg-gray-100 animate-pulse" />,
+});
+
+// ✅ Code-split: Newsletter (not critical above the fold)
+const NewsletterSignup = dynamic(
+  () => import("../Component/features/NewLetterSignup"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-40 bg-gray-100 animate-pulse rounded-xl" />
+    ),
+  }
+);
+
+// ✅ Code-split: FeaturedProducts grid (UI chunk)
+const FeaturedProducts = dynamic(
+  () => import("../Component/products/FeaturedProducts"),
+  {
+    ssr: false,
+    loading: () => <FeaturedProductsSkeleton />,
+  }
+);
 
 // Loading skeleton component
 function FeaturedProductsSkeleton() {
@@ -20,9 +43,9 @@ function FeaturedProductsSkeleton() {
             key={index}
             className="animate-pulse bg-white rounded-lg shadow p-4"
           >
-            <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
-            <div className="bg-gray-200 h-4 rounded mb-2"></div>
-            <div className="bg-gray-200 h-4 rounded w-3/4"></div>
+            <div className="bg-gray-200 h-48 rounded-lg mb-4" />
+            <div className="bg-gray-200 h-4 rounded mb-2" />
+            <div className="bg-gray-200 h-4 rounded w-3/4" />
           </div>
         ))}
       </div>
@@ -30,17 +53,22 @@ function FeaturedProductsSkeleton() {
   );
 }
 
+// ✅ Code-split the “query” component so the hook code is not in the initial bundle
+const FeaturedProductsWithQuery = dynamic(
+  () => Promise.resolve(FeaturedProductsWithQueryImpl),
+  {
+    ssr: false,
+    loading: () => <FeaturedProductsSkeleton />,
+  }
+);
+
 export default function HomePage() {
   const { addToCart } = useCart();
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <Suspense
-        fallback={<div className="min-h-[60vh] bg-gray-100 animate-pulse" />}
-      >
-        <HeroSlider />
-      </Suspense>
+      <HeroSlider />
 
       {/* Featured Products Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -51,9 +79,7 @@ export default function HomePage() {
           <p className="text-gray-600">Check out our top-rated products</p>
         </div>
 
-        <Suspense fallback={<FeaturedProductsSkeleton />}>
-          <FeaturedProductsWithQuery addToCart={addToCart} />
-        </Suspense>
+        <FeaturedProductsWithQuery addToCart={addToCart} />
       </section>
 
       {/* Newsletter */}
@@ -62,13 +88,10 @@ export default function HomePage() {
   );
 }
 
-// Separate component to use the hook
-function FeaturedProductsWithQuery({ addToCart }) {
+function FeaturedProductsWithQueryImpl({ addToCart }) {
   const { data, isLoading, error } = useFeaturedProducts();
 
-  if (isLoading) {
-    return <FeaturedProductsSkeleton />;
-  }
+  if (isLoading) return <FeaturedProductsSkeleton />;
 
   if (error) {
     return (
@@ -79,6 +102,5 @@ function FeaturedProductsWithQuery({ addToCart }) {
   }
 
   const products = data?.products || [];
-
   return <FeaturedProducts products={products} addToCart={addToCart} />;
 }
