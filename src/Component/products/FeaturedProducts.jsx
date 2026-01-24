@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "../products/ProductCard";
 
 const FALLBACK_IMG = "/images/default-product.png";
 
