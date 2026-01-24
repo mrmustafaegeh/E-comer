@@ -6,8 +6,24 @@ import ProductCard from "@/components/ProductCard";
 const FALLBACK_IMG = "/images/default-product.png";
 
 function normalizeImageSrc(src) {
-  const s = String(src || "").trim();
+  // ✅ support arrays (images: ["..."])
+  if (Array.isArray(src)) src = src[0];
+
+  // ✅ support objects (cloudinary-like)
+  if (src && typeof src === "object") {
+    src = src.url || src.secure_url || src.src || "";
+  }
+
+  let s = String(src || "").trim();
   if (!s) return FALLBACK_IMG;
+
+  // ✅ fix broken protocol from your API: "https:/..." -> "https://..."
+  if (s.startsWith("https:/") && !s.startsWith("https://")) {
+    s = s.replace(/^https:\//, "https://");
+  }
+  if (s.startsWith("http:/") && !s.startsWith("http://")) {
+    s = s.replace(/^http:\//, "http://");
+  }
 
   // ✅ keep absolute URLs untouched
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
@@ -25,6 +41,7 @@ function normalizeProducts(products) {
     const name = p?.name ?? p?.title ?? "Product";
 
     const price = Number(p?.price) || 0;
+
     const offerPrice =
       p?.offerPrice != null && p?.offerPrice !== ""
         ? Number(p.offerPrice)
@@ -32,11 +49,10 @@ function normalizeProducts(products) {
         ? Number(p.salePrice)
         : null;
 
-    const image = normalizeImageSrc(p?.image || p?.thumbnail);
+    const image = normalizeImageSrc(p?.image || p?.thumbnail || p?.images);
 
     return {
       ...p,
-      // normalize ids
       id: p?.id ?? p?._id,
       _id: p?._id ?? p?.id,
       title,
@@ -52,7 +68,7 @@ function normalizeProducts(products) {
   });
 }
 
-function FeaturedProducts({ products = [] }) {
+function FeaturedProducts({ products = [], addToCart }) {
   const normalized = useMemo(() => normalizeProducts(products), [products]);
 
   if (!normalized.length) {
@@ -93,7 +109,8 @@ function FeaturedProducts({ products = [] }) {
           <ProductCard
             key={product?.id || product?._id || `${index}`}
             product={product}
-            index={index} // if your ProductCard uses it for loading/priority
+            index={index}
+            addToCart={addToCart} // ✅ only if ProductCard supports it
           />
         ))}
       </div>
