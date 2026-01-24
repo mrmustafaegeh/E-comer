@@ -162,3 +162,8 @@ export function rateLimitResponse() {
     { status: 429 }
   );
 }
+
+export function isValidObjectId(id) {
+  if (!id || typeof id !== "string") return false;
+  return /^[0-9a-fA-F]{24}$/.test(id);
+}
