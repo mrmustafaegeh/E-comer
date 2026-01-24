@@ -11,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import React from "react";
@@ -21,19 +21,25 @@ interface AdminHeaderProps {
   sidebarOpen: boolean;
 }
 
+interface User {
+  id: string;
+  name?: string;
+  email?: string;
+}
+
 export default function AdminHeader({
   onMenuClick,
   sidebarOpen,
 }: AdminHeaderProps) {
-  const { data: session } = useSession();
+  const { user, logout } = useAuth() as any;
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push("/auth/signin");
+    await logout();
+    router.push("/auth/login");
   };
 
   return (
@@ -129,14 +135,14 @@ export default function AdminHeader({
               className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg"
             >
               <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                {session?.user?.name?.[0] || "A"}
+                {user?.name?.[0] || "A"}
               </div>
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-medium">
-                  {session?.user?.name || "Admin"}
+                  {user?.name || "Admin"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {session?.user?.email || "admin@example.com"}
+                   {user?.email || "admin@example.com"}
                 </p>
               </div>
               <ChevronDown size={16} className="hidden lg:block" />
@@ -146,10 +152,10 @@ export default function AdminHeader({
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="font-medium">
-                    {session?.user?.name || "Admin User"}
+                    {user?.name || "Admin User"}
                   </p>
                   <p className="text-sm text-gray-500 truncate">
-                    {session?.user?.email}
+                    {user?.email}
                   </p>
                 </div>
 

@@ -127,7 +127,7 @@ export async function GET(request) {
         headers: {
           "Cache-Control":
             process.env.NODE_ENV === "production"
-              ? "public, s-maxage=60, stale-while-revalidate=300"
+              ? "public, s-maxage=60, stale-while-revalidate=120"
               : "private, max-age=10",
         },
       }

@@ -15,13 +15,10 @@
     "fix:images": "node scripts/fix-image-paths.mjs",
     "setup:admin": "node scripts/setup-admin-indexes.mjs",
     "analyze:queries": "node scripts/analyze-slow-queries.mjs",
+    "optimize-images": "node scripts/optimize-images.js",
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^7.0.1",
-    "@fortawesome/free-solid-svg-icons": "^7.0.1",
-    "@fortawesome/react-fontawesome": "^3.0.2",
-    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.10.1",
     "@stripe/stripe-js": "^8.6.1",
@@ -52,7 +49,6 @@
     "react-i18next": "^16.1.0",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
-    "react-toastify": "^11.0.5",
     "recharts": "^3.6.0",
     "sharp": "^0.34.5",
     "stripe": "^20.1.2",
@@ -60,6 +56,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^7.0.2",
     "@next/bundle-analyzer": "^15.5.9",
     "@prisma/client": "^7.1.0",
     "@types/node": "^20",
@@ -68,11 +65,13 @@
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.9.11",
     "critters": "^0.0.23",
+    "cssnano": "^7.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "postcss": "^8.5.6",
     "prisma": "^7.1.0",
     "tailwindcss": "^3.4.17",
+    "terser": "^5.46.0",
     "typescript": "^5"
   }
 }

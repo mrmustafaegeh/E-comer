@@ -72,7 +72,7 @@ export async function GET() {
     response.headers.set(
       "Cache-Control",
       process.env.NODE_ENV === "production"
-        ? "public, s-maxage=600, stale-while-revalidate=1200"
+        ? "public, s-maxage=300, stale-while-revalidate=600"
         : "private, max-age=60"
     );
 

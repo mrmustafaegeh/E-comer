@@ -1,7 +1,9 @@
+"use client";
 
+import { memo } from "react";
 import Image from "next/image";
 
-export default function FeaturedProducts({ products = [] }) {
+function FeaturedProducts({ products = [] }) {
   if (!products || products.length === 0) {
     return (
       <div className="text-center py-16 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
@@ -37,21 +39,21 @@ export default function FeaturedProducts({ products = [] }) {
         <div
           key={product._id}
           className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200"
-          style={{ animationDelay: `${index * 50}ms` }}
         >
-          {/* Product Image */}
+          {/* ✅ Product Image - Optimized */}
           <div className="relative overflow-hidden bg-gray-50 aspect-square">
             <Image
-              width={528} // ← ADD: original size
-              height={528} // ← ADD: original size
-              quality={85} // ← ADD: compression quality
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              src={product.image || "/images/default-product.png"}
-              alt={product.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover"
+              quality={75}
+              loading={index < 4 ? "eager" : "lazy"}
+              priority={index < 2}
             />
 
-            {/* Badges */}
+            {/* ✅ Badges */}
             <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
               {product.offerPrice && (
                 <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
@@ -69,7 +71,7 @@ export default function FeaturedProducts({ products = [] }) {
               )}
             </div>
 
-            {/* Quick View Overlay */}
+            {/* ✅ Quick View Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
               <button className="bg-white text-gray-900 px-6 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition transform translate-y-4 group-hover:translate-y-0">
                 Quick View
@@ -77,13 +79,13 @@ export default function FeaturedProducts({ products = [] }) {
             </div>
           </div>
 
-          {/* Product Info */}
+          {/* ✅ Product Info */}
           <div className="p-5">
             <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition min-h-[3rem]">
               {product.title}
             </h3>
 
-            {/* Price */}
+            {/* ✅ Price */}
             <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl font-bold text-gray-900">
                 ${(product.offerPrice || product.price).toFixed(2)}
@@ -95,7 +97,7 @@ export default function FeaturedProducts({ products = [] }) {
               )}
             </div>
 
-            {/* Rating & Reviews */}
+            {/* ✅ Rating & Reviews */}
             {product.rating > 0 && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
@@ -109,6 +111,7 @@ export default function FeaturedProducts({ products = [] }) {
                             : "text-gray-300"
                         }`}
                         viewBox="0 0 20 20"
+                        aria-hidden="true"
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
@@ -126,7 +129,7 @@ export default function FeaturedProducts({ products = [] }) {
               </div>
             )}
 
-            {/* Stock indicator */}
+            {/* ✅ Stock indicator */}
             {product.stock !== undefined && (
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <div className="flex items-center justify-between text-xs">
@@ -154,3 +157,6 @@ export default function FeaturedProducts({ products = [] }) {
     </div>
   );
 }
+
+
+export default memo(FeaturedProducts);

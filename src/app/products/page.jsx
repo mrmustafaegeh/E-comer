@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import ProductList from "../../Component/products/ProductsList";
-import ProductFilters from "../../Component/products/ProductFilters";
-import ProductPagination from "../../Component/products/ProductPagination";
+import dynamic from "next/dynamic";
 import LoadingSpinner from "../../Component/ui/LoadingSpinner";
 import EmptyState from "../../Component/ui/EmptyState";
 import { useProducts } from "../../hooks/useProducts";
+
+const ProductList = dynamic(() => import("../../Component/products/ProductsList"), { ssr: false });
+const ProductFilters = dynamic(() => import("../../Component/products/ProductFilters"), { 
+  ssr: false,
+  loading: () => <div className="h-40 bg-gray-100 animate-pulse rounded-xl mb-6" />
+});
+const ProductPagination = dynamic(() => import("../../Component/products/ProductPagination"), { ssr: false });
 
 export default function ProductsPage() {
   const [localFilters, setLocalFilters] = useState({

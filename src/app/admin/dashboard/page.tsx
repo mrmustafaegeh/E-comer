@@ -2,13 +2,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import StatGrid from "../../../Component/dashboard/StatGrid";
-import RecentOrdersTable from "../../../Component/dashboard/RecentOrdersTable";
-import QuickActions from "../../../Component/dashboard/QuickActions";
-import ChartSection from "../../../Component/dashboard/ChartSection";
-import ActivityFeed from "../../../Component/dashboard/ActivityFeed";
-import TopProducts from "../../../Component/dashboard/TopProducts";
+import dynamic from "next/dynamic";
 import LoadingSpinner from "../../../Component/ui/LoadingSpinner";
+
+// Dynamically import heavy dashboard components
+const StatGrid = dynamic(() => import("../../../Component/dashboard/StatGrid"), { ssr: false });
+const RecentOrdersTable = dynamic(() => import("../../../Component/dashboard/RecentOrdersTable"), { ssr: false });
+const QuickActions = dynamic(() => import("../../../Component/dashboard/QuickActions"), { ssr: false });
+const ActivityFeed = dynamic(() => import("../../../Component/dashboard/ActivityFeed"), { ssr: false });
+const TopProducts = dynamic(() => import("../../../Component/dashboard/TopProducts"), { ssr: false });
+
+// ChartSection is particularly heavy (likely imports Recharts)
+const ChartSection = dynamic(() => import("../../../Component/dashboard/ChartSection"), { 
+  ssr: false,
+  loading: () => <div className="h-80 w-full bg-gray-100 animate-pulse rounded-xl" />
+});
 import {
   Package,
   ShoppingCart,
@@ -259,7 +267,7 @@ export default function AdminDashboard() {
       const [productsRes, ordersRes, usersRes] = await Promise.allSettled([
         api.get("/admin/admin-products"),
         api.get("/admin/admin-orders"),
-        api.get("/admin/users"),
+        api.get("/admin/admin-users"),
       ]);
 
       const productsData =

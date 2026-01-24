@@ -1,10 +1,12 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
+import { memo } from "react";
+
 const ProductIndicators = ({ products, activeProduct, setActiveProduct }) => {
   return (
     <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex gap-2">
       {products.map((_, idx) => (
-        <motion.button
+        <m.button
           key={idx}
           onClick={() => setActiveProduct(idx)}
           whileHover={{ scale: 1.2 }}
@@ -19,4 +21,4 @@ const ProductIndicators = ({ products, activeProduct, setActiveProduct }) => {
   );
 };
 
-export default ProductIndicators;
+export default memo(ProductIndicators);

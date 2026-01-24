@@ -6,7 +6,9 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig = {
+  // ✅ Empty turbopack config to silence the warning
   turbopack: {},
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -35,20 +37,31 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
-    formats: ["image/webp", "image/avif"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    qualities: [75, 85], // ✅ Add this line
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    qualities: [75, 85],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+
   poweredByHeader: false,
   compress: true,
+
   experimental: {
     optimizeCss: true,
-    workerThreads: false,
-    optimizePackageImports: ["framer-motion", "lucide-react"],
+    optimizePackageImports: [
+      "recharts",
+      "lucide-react",
+      "framer-motion",
+      "react-icons",
+      "@tanstack/react-query",
+    ],
   },
 
   async headers() {
@@ -57,16 +70,16 @@ const nextConfig = {
         source: "/:path*",
         headers: [
           {
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+          {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
           {
             key: "X-Frame-Options",
@@ -77,34 +90,21 @@ const nextConfig = {
             value: "1; mode=block",
           },
           {
-            key: "Content-Security-Policy",
-            value: "object-src 'none'; base-uri 'self'; default-src 'self'; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-ancestors 'none'; upgrade-insecure-requests;",
-          },
-          {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains; preload",
           },
           {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
           {
-            key: "Cross-Origin-Resource-Policy",
-            value: "same-origin",
+            key: "Content-Security-Policy",
+            value: "object-src 'none'; base-uri 'self'; default-src 'self'; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
         ],
       },
       {
-        source: "/images/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/_next/image/:path*",
+        source: "/_next/static/:path*",
         headers: [
           {
             key: "Cache-Control",
@@ -115,17 +115,7 @@ const nextConfig = {
     ];
   },
 
-  webpack: (config, { isServer, dev }) => {
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        "core-js": false,
-        "regenerator-runtime": false,
-        "@swc/helpers": false,
-      };
-    }
-    return config;
-  },
+  
 };
 
 export default process.env.ANALYZE ? bundleAnalyzer(nextConfig) : nextConfig;

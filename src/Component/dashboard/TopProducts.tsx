@@ -38,11 +38,16 @@ export default function TopProducts({ products }: TopProductsProps) {
             <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
               {product.image ? (
                 <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
+                src={product.image}
+                alt={product.name}
+                fill
+                sizes="48px" 
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-200">
                   <Package className="w-6 h-6 text-gray-400" />

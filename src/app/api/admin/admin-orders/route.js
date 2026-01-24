@@ -59,10 +59,9 @@ export async function GET(request) {
       {
         status: 200,
         headers: {
-          "Cache-Control":
-            process.env.NODE_ENV === "production"
-              ? "private, max-age=60"
-              : "private, max-age=10",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       }
     );

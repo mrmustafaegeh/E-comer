@@ -1,14 +1,16 @@
 "use client";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
+import { memo } from "react";
+
 const CTAButtons = () => {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
       className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
     >
-      <motion.button
+      <m.button
         whileHover={{
           scale: 1.05,
           boxShadow: "0 20px 40px rgba(99, 102, 241, 0.4)",
@@ -18,7 +20,7 @@ const CTAButtons = () => {
       >
         <span className="relative z-10 flex items-center justify-center gap-2">
           Shop Now
-          <motion.svg
+          <m.svg
             className="w-5 h-5"
             fill="none"
             stroke="currentColor"
@@ -32,24 +34,24 @@ const CTAButtons = () => {
               strokeWidth={2}
               d="M13 7l5 5m0 0l-5 5m5-5H6"
             />
-          </motion.svg>
+          </m.svg>
         </span>
-        <motion.div
+        <m.div
           className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
           initial={{ x: "-100%" }}
           whileHover={{ x: 0 }}
           transition={{ duration: 0.3 }}
         />
-      </motion.button>
+      </m.button>
 
-      <motion.button
+      <m.button
         whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.15)" }}
         whileTap={{ scale: 0.95 }}
         className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/20 transition-all"
       >
         Browse Collection
-      </motion.button>
-    </motion.div>
+      </m.button>
+    </m.div>
   );
 };
-export default CTAButtons;
+export default memo(CTAButtons);

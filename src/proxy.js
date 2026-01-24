@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Protect /admin routes

@@ -28,8 +28,8 @@ export async function validateRequest(request) {
     }
 
     if (!origin) {
-      // For mutations via forms/JSON, origin is usually required.
-      // We permit missing origin only in non-strict dev environments if necessary.
+      // Mutations usually REQUIRE an origin.
+      // Exception for development if really needed, but strict in production.
       return process.env.NODE_ENV === 'development';
     }
 
@@ -55,14 +55,40 @@ export function isValidObjectId(id) {
 }
 
 /**
- * Very basic in-memory rate limiting for demonstration.
- * In production, use Redis (Upstash) or similar.
+ * Distributed rate limiting.
+ * Uses Upstash Redis if UPSTASH_REDIS_REST_URL is present.
+ * Falls back to in-memory Map for dev/demo.
  */
 const rateLimitMap = new Map();
 
-export async function rateLimit(ip, limit = 5, windowMs = 60000) {
+export async function rateLimit(identifier, limit = 5, windowMs = 60000) {
+  // 1. Try Upstash Redis if configured
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    try {
+      const url = `${process.env.UPSTASH_REDIS_REST_URL}/incr/ratelimit:${identifier}`;
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+      });
+      
+      const { result: count } = await response.json();
+      
+      // If it's the first hit, set expiry
+      if (count === 1) {
+        await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/expire/ratelimit:${identifier}/${Math.floor(windowMs / 1000)}`, {
+          headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+        });
+      }
+      
+      return count <= limit;
+    } catch (e) {
+      console.error("❌ Redis Rate Limit Error:", e.message);
+      // Fallback to in-memory on redis failure to avoid blocking legitimate users
+    }
+  }
+
+  // 2. In-memory fallback
   const now = Date.now();
-  const record = rateLimitMap.get(ip) || { count: 0, startTime: now };
+  const record = rateLimitMap.get(identifier) || { count: 0, startTime: now };
 
   if (now - record.startTime > windowMs) {
     record.count = 1;
@@ -71,7 +97,7 @@ export async function rateLimit(ip, limit = 5, windowMs = 60000) {
     record.count++;
   }
 
-  rateLimitMap.set(ip, record);
+  rateLimitMap.set(identifier, record);
 
   return record.count <= limit;
 }

@@ -1,10 +1,11 @@
 // app/components/component/ProductCard.jsx
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
+import { memo } from "react";
 import Image from "next/image";
 
-export default function ProductCard({ product }) {
+function ProductCard({ product }) {
   if (!product) return null;
 
   const floatingVariants = {
@@ -33,7 +34,7 @@ export default function ProductCard({ product }) {
       : null;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, rotateY: -90 }}
       animate={{ opacity: 1, rotateY: 0 }}
       exit={{ opacity: 0, rotateY: 90 }}
@@ -41,19 +42,19 @@ export default function ProductCard({ product }) {
       className="relative group"
     >
       {/* Glow */}
-      <motion.div
+      <m.div
         className={`absolute -inset-1 bg-gradient-to-r ${safeGradient} rounded-2xl blur opacity-25`}
         animate={{ opacity: [0.25, 0.5, 0.25] }}
         transition={{ duration: 3, repeat: Infinity }}
       />
 
       {/* Card */}
-      <motion.div
+      <m.div
         whileHover={{ y: -10 }}
         className="relative bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl p-8 backdrop-blur-xl border border-white/10"
       >
         {/* Image / Emoji */}
-        <motion.div
+        <m.div
           variants={floatingVariants}
           animate="animate"
           className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-700 mb-6 flex items-center justify-center"
@@ -73,7 +74,7 @@ export default function ProductCard({ product }) {
           ) : (
             <div className="text-9xl">{fallbackEmoji || "✨"}</div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Info */}
         <div className="space-y-4">
@@ -113,17 +114,19 @@ export default function ProductCard({ product }) {
             </div>
 
             {product.discount ? (
-              <motion.div
+              <m.div
                 animate={{ rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className={`px-4 py-2 bg-gradient-to-r ${safeGradient} text-white text-sm font-bold rounded-full`}
               >
                 {product.discount}
-              </motion.div>
+              </m.div>
             ) : null}
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
+
+export default memo(ProductCard);

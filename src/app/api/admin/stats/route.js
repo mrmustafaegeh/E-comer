@@ -143,7 +143,14 @@ export async function GET() {
       },
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json(response, { 
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      }
+    });
   } catch (err) {
     console.error("ADMIN STATS ERROR:", err);
     return NextResponse.json(

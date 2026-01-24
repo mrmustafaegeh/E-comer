@@ -12,9 +12,18 @@ import {
   motion,
 } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "../features/LanguageSwitcher";
-import UserProfile from "./UserProfile";
+import dynamic from "next/dynamic";
 import { useAuth } from "../../contexts/AuthContext";
+
+const LanguageSwitcher = dynamic(() => import("../features/LanguageSwitcher"), { 
+  ssr: false,
+  loading: () => <div className="w-16 h-8 bg-gray-100 animate-pulse rounded-md" />
+});
+
+const UserProfile = dynamic(() => import("./UserProfile"), { 
+  ssr: false,
+  loading: () => <div className="w-10 h-10 bg-gray-100 animate-pulse rounded-full" />
+});
 
 // Motion shorthands
 const MotionNav = m.nav;

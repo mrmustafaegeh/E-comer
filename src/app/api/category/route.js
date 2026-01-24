@@ -20,7 +20,14 @@ export async function GET(request) {
       id: cat._id.toString(),
     }));
 
-    return NextResponse.json(transformedCategories);
+    return NextResponse.json(transformedCategories, {
+      headers: {
+        "Cache-Control":
+          process.env.NODE_ENV === "production"
+            ? "public, s-maxage=3600, stale-while-revalidate=7200" // 1 hour cache
+            : "private, max-age=10",
+      },
+    });
   } catch (error) {
     console.error("Categories API error:", error);
     return NextResponse.json(

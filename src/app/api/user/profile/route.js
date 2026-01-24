@@ -31,9 +31,14 @@ export async function GET() {
         name: user.name,
         email: user.email,
         image: user.image,
-        address: user.address, // Assuming address is stored here or extended
+        address: user.address, 
         phone: user.phone,
         role: user.role || user.roles
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache",
+      }
     });
 
   } catch (error) {
