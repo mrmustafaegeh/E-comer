@@ -1,3 +1,6 @@
+import { validateRequest, forbiddenResponse } from "@/lib/security";
+import { verifySession } from "@/lib/session";
+import { ProductSchema, formatZodErrors } from "@/lib/validation";
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 
@@ -6,7 +9,7 @@ export async function GET(request) {
 
   try {
     const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB); // Change to your DB name
+    const db = client.db(process.env.MONGODB_DB); 
     const collection = db.collection("products");
 
     const params = Object.fromEntries(request.nextUrl.searchParams);
@@ -32,9 +35,9 @@ export async function GET(request) {
     // Build filters
     const filters = {};
 
-    // Category filter
+    // Category filter - Use exact match instead of regex for performance
     if (category && category !== "all") {
-      filters.category = new RegExp(`^${category}$`, "i"); // Case-insensitive match
+      filters.category = category.toLowerCase();
     }
 
     // Price filter - check both price and salePrice
@@ -58,40 +61,12 @@ export async function GET(request) {
       filters.$or = priceConditions;
     }
 
-    // Search filter - search in name, title, and description
+    // Search filter - in production use MongoDB Text Index
     if (search) {
-      const searchRegex = new RegExp(search, "i");
-      filters.$or = [
-        { name: searchRegex },
-        { title: searchRegex },
-        { description: searchRegex },
-      ];
-    }
-
-    // If we have both price and search filters, combine them with $and
-    if (search && (Number.isFinite(minPrice) || Number.isFinite(maxPrice))) {
-      const searchRegex = new RegExp(search, "i");
-      const priceFilter = {};
-      if (Number.isFinite(minPrice)) priceFilter.$gte = minPrice;
-      if (Number.isFinite(maxPrice)) priceFilter.$lte = maxPrice;
-
-      filters.$and = [
-        {
-          $or: [
-            { name: searchRegex },
-            { title: searchRegex },
-            { description: searchRegex },
-          ],
-        },
-        {
-          $or: [
-            { price: priceFilter },
-            { salePrice: { ...priceFilter, $ne: null } },
-          ],
-        },
-      ];
-
-      delete filters.$or;
+      filters.$text = { $search: search };
+      // Fallback if no text index:
+      // const searchRegex = new RegExp(search, "i");
+      // filters.$or = [{ name: searchRegex }, { title: searchRegex }, { description: searchRegex }];
     }
 
     const skip = (page - 1) * limit;
@@ -114,6 +89,7 @@ export async function GET(request) {
       isFeatured: 1,
       stock: 1,
       createdAt: 1,
+      slug: 1,
     };
 
     // Run queries in parallel
@@ -137,11 +113,6 @@ export async function GET(request) {
     }));
 
     const ms = Date.now() - start;
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `✅ /api/products ${transformedProducts.length} items in ${ms}ms`
-      );
-    }
 
     return NextResponse.json(
       {
@@ -172,30 +143,41 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // 1. Validate Origin
+    const isValidRequest = await validateRequest(request);
+    if (!isValidRequest) return forbiddenResponse();
+
+    // 2. Authorize - Must be Admin
+    const session = await verifySession();
+    if (!session || !session.roles?.includes("admin")) {
+      return NextResponse.json(
+        { error: "Unauthorized. Admin privileges required." },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+
+    // 3. Validate Input with Zod
+    const parsed = ProductSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", errors: formatZodErrors(parsed.error) },
+        { status: 400 }
+      );
+    }
+
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     const collection = db.collection("products");
 
-    const body = await request.json();
-
-    const name = typeof body.name === "string" ? body.name : body.title;
-    if (!name || typeof name !== "string" || !name.trim()) {
-      return NextResponse.json(
-        { error: "Product name is required" },
-        { status: 400 }
-      );
-    }
-
-    const price = Number(body.price);
-    if (!Number.isFinite(price) || price < 0) {
-      return NextResponse.json(
-        { error: "Valid price is required" },
-        { status: 400 }
-      );
-    }
+    const productData = {
+      ...parsed.data,
+      category: parsed.data.category.toLowerCase(),
+    };
 
     // Create slug from name
-    const slug = (body.slug || name)
+    const slug = (body.slug || productData.name)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
@@ -212,26 +194,8 @@ export async function POST(request) {
     const now = new Date();
 
     const doc = {
-      name: name.trim(),
-      title: (body.title || name).trim(),
+      ...productData,
       slug,
-      description: body.description || null,
-      price,
-      salePrice: body.salePrice != null ? Number(body.salePrice) : null,
-      oldPrice: body.oldPrice != null ? Number(body.oldPrice) : null,
-      discount: body.discount || null,
-      thumbnail: body.thumbnail || null,
-      image: body.image || null,
-      emoji: body.emoji || null,
-      category: body.category || null,
-      stock: body.stock != null ? Number(body.stock) : 0,
-      rating: body.rating != null ? Number(body.rating) : 0,
-      numReviews: body.numReviews != null ? Number(body.numReviews) : 0,
-      featured: Boolean(body.featured),
-      isFeatured: body.isFeatured != null ? Boolean(body.isFeatured) : false,
-      featuredOrder:
-        body.featuredOrder != null ? Number(body.featuredOrder) : null,
-      gradient: body.gradient || null,
       createdAt: now,
       updatedAt: now,
     };

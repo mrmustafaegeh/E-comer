@@ -9,6 +9,7 @@ const ProductIndicators = ({ products, activeProduct, setActiveProduct }) => {
           onClick={() => setActiveProduct(idx)}
           whileHover={{ scale: 1.2 }}
           whileTap={{ scale: 0.9 }}
+          aria-label={`Go to slide ${idx + 1}`}
           className={`w-2 h-2 rounded-full transition-all ${
             idx === activeProduct ? "bg-white w-8" : "bg-white/30"
           }`}

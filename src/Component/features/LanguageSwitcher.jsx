@@ -12,6 +12,7 @@ export default function LanguageSwitcher() {
     <select
       onChange={changeLanguage}
       value={i18n.language}
+      aria-label="Select Language"
       className="p-2 rounded border bg-white text-gray-700 text-sm"
     >
       <option value="en">English</option>

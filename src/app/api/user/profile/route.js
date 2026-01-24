@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { validateRequest, forbiddenResponse } from "@/lib/security";
 
 export async function GET() {
   try {
@@ -41,8 +42,12 @@ export async function GET() {
   }
 }
 
+
 export async function PUT(request) {
   try {
+    const isValidRequest = await validateRequest(request);
+    if (!isValidRequest) return forbiddenResponse();
+
     const session = await getCurrentUser();
     
     if (!session || !session.userId) {

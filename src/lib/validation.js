@@ -13,7 +13,7 @@ export const RegisterSchema = z
       .min(2, "Name must be at least 2 characters")
       .max(50, "Name must be at most 50 characters")
       .trim(),
-    // email: emailField,
+    email: z.string().email("Invalid email address").toLowerCase().trim(),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -21,6 +21,20 @@ export const RegisterSchema = z
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
+
+export const ProductSchema = z.object({
+  name: z.string().min(2).max(100).trim(),
+  title: z.string().min(2).max(200).trim().optional(),
+  description: z.string().max(2000).optional(),
+  price: z.number().min(0),
+  salePrice: z.number().min(0).nullable().optional(),
+  oldPrice: z.number().min(0).nullable().optional(),
+  category: z.string().min(1).max(50).trim(),
+  stock: z.number().min(0).default(0),
+  image: z.string().url().nullable().optional(),
+  thumbnail: z.string().url().nullable().optional(),
+  featured: z.boolean().default(false),
+});
 
 export function formatZodErrors(error) {
   const formatted = {};

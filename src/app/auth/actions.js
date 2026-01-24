@@ -4,67 +4,26 @@ import {
   LoginSchema,
   RegisterSchema,
   formatZodErrors,
-} from "../lib/validation";
+} from "../../lib/validation";
 
-import { createSession, deleteSession } from "../lib/session";
-import bcrypt from "bcryptjs";
-import clientPromise from "./mongodb";
+import { createSession, deleteSession } from "../../lib/session";
+import { findUserByEmail, createUser, comparePassword } from "../../lib/auth-core";
+import { validateRequest } from "../../lib/security";
+import "server-only";
 
-// Use ONE database name everywhere (same locally + Vercel)
-const DB_NAME = process.env.MONGODB_DB || "ecommerce";
-
-// ------------------------
-// Helpers
-// ------------------------
-
-async function getUsersCollection() {
-  const client = await clientPromise;
-  const db = client.db(DB_NAME);
-  return db.collection("users");
+/**
+ * Internal wrapper for origin validation.
+ */
+async function validateOrigin() {
+  const isValid = await validateRequest();
+  if (!isValid) throw new Error("Invalid origin");
+  return true;
 }
-
-export async function findUserByEmail(email) {
-  const users = await getUsersCollection();
-  const normalizedEmail = String(email || "")
-    .trim()
-    .toLowerCase();
-  if (!normalizedEmail) return null;
-  return users.findOne({ email: normalizedEmail });
-}
-
-export async function createUser(name, email, password) {
-  const users = await getUsersCollection();
-
-  const normalizedEmail = String(email || "")
-    .trim()
-    .toLowerCase();
-  const safeName = String(name || "").trim();
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const newUser = {
-    name: safeName,
-    email: normalizedEmail,
-    password: hashedPassword,
-    roles: ["user"],
-    createdAt: new Date(),
-  };
-
-  const result = await users.insertOne(newUser);
-
-  return {
-    ...newUser,
-    id: result.insertedId.toString(),
-    _id: result.insertedId.toString(),
-  };
-}
-
-// ------------------------
-// Register Action
-// ------------------------
 
 export async function registerAction(prevState, formData) {
   try {
+    await validateOrigin();
+    
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
@@ -113,17 +72,15 @@ export async function registerAction(prevState, formData) {
     console.error("💥 Registration error:", error);
     return {
       success: false,
-      message: "An error occurred during registration",
+      message: error.message === "Invalid origin" ? "Security check failed" : "An error occurred during registration",
     };
   }
 }
 
-// ------------------------
-// Login Action
-// ------------------------
-
 export async function loginAction(prevState, formData) {
   try {
+    await validateOrigin();
+
     const data = {
       email: formData.get("email"),
       password: formData.get("password"),
@@ -140,13 +97,11 @@ export async function loginAction(prevState, formData) {
 
     const user = await findUserByEmail(parsed.data.email);
 
-    // Don’t reveal which one is wrong (security)
     if (!user) {
       return { success: false, message: "Invalid email or password" };
     }
 
-    // ✅ MUST be true
-    const passwordMatch = await bcrypt.compare(
+    const passwordMatch = await comparePassword(
       parsed.data.password,
       user.password
     );
@@ -176,14 +131,10 @@ export async function loginAction(prevState, formData) {
     console.error("💥 Login error:", error);
     return {
       success: false,
-      message: "An error occurred during login",
+      message: error.message === "Invalid origin" ? "Security check failed" : "An error occurred during login",
     };
   }
 }
-
-// ------------------------
-// Logout Action
-// ------------------------
 
 export async function logoutAction() {
   try {

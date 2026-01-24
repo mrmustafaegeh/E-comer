@@ -6,7 +6,7 @@ import ClientTranslationProvider from "../Component/ClientTranslationProvider.js
 import ReduxProvider from "../providers/ReduxProvider.jsx";
 import ReactQueryProvider from "../providers/ReactQueryProvider.jsx"; // ✅ Add this
 import { AuthProvider } from "../contexts/AuthContext.js";
-import DeferredCSS from "../Component/ui/eferredCSS.jsx";
+import DeferredCSS from "../Component/ui/DeferredCSS.jsx";
 import "./globals.css";
 import "./i18n.js";
 
@@ -24,6 +24,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="flex flex-col min-h-screen w-full">
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-[100]"
+        >
+          Skip to content
+        </a>
         <DeferredCSS />
         <ReactQueryProvider>
           <ReduxProvider>
@@ -31,7 +37,9 @@ export default function RootLayout({ children }) {
               <ClientTranslationProvider>
                 <Header />
                 <ScrollToTop />
-                <div className="flex-1 w-full">{children}</div>
+                <main id="main-content" className="flex-1 w-full">
+                  {children}
+                </main>
                 <Footer />
               </ClientTranslationProvider>
             </AuthProvider>

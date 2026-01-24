@@ -30,7 +30,17 @@ async function main() {
     await products.createIndex({ featured: 1, rating: -1 });
     await products.createIndex({ rating: -1 });
 
-    console.log("✅ products indexes created");
+    // Price filters
+    await products.createIndex({ price: 1 });
+    await products.createIndex({ salePrice: 1 });
+
+    // Text search (name, title, description)
+    await products.createIndex(
+      { name: "text", title: "text", description: "text" },
+      { weights: { title: 10, name: 5, description: 1 } }
+    );
+
+    console.log("✅ products indexes created (including price and text search)");
 
     // USERS
     const users = db.collection("users");

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "../../../Component/ui/LoadingSpinner";
 import Image from "next/image";
+import JsonLd, { generateProductJsonLd } from "../../../Component/seo/JsonLd";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -92,6 +93,14 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {product && (
+        <JsonLd 
+          data={generateProductJsonLd(
+            product, 
+            process.env.NEXT_PUBLIC_APP_URL || 'https://example.com'
+          )} 
+        />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button

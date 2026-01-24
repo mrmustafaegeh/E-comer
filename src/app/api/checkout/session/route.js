@@ -1,6 +1,10 @@
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
+import { validateRequest, rateLimit, forbiddenResponse, rateLimitResponse, isValidObjectId } from "@/lib/security";
+import { headers } from "next/headers";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 export async function POST(request) {
   if (!stripe) {
@@ -11,48 +15,60 @@ export async function POST(request) {
   }
 
   try {
+    // 1. Security Checks
+    const isValidRequest = await validateRequest(request);
+    if (!isValidRequest) return forbiddenResponse();
+
+    const headerList = await headers();
+    const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
+    if (!(await rateLimit(ip, 3, 60000))) return rateLimitResponse();
+
     const user = await getCurrentUser();
-    
     const body = await request.json();
     const { items, email } = body;
 
-    if (!items || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return new NextResponse("No items in checkout", { status: 400 });
     }
 
-    // Get base URL - try multiple sources
-    const baseUrl = 
-      process.env.NEXT_PUBLIC_APP_URL || 
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null ||
-      request.headers.get('origin') ||
-      request.headers.get('referer')?.split('?')[0].replace(/\/$/, '') ||
-      'http://localhost:3000';
+    // 2. Validate IDs and fetch products from DB
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    
+    const validItems = items.filter(i => isValidObjectId(i.id || i._id));
+    if (validItems.length !== items.length) {
+      return new NextResponse("Invalid product IDs in request", { status: 400 });
+    }
 
-    // Ensure baseUrl has protocol
-    const normalizedBaseUrl = baseUrl.startsWith('http') 
-      ? baseUrl 
-      : `https://${baseUrl}`;
+    const productIds = validItems.map(item => new ObjectId(item.id || item._id));
+    const dbProducts = await db.collection("products").find({ _id: { $in: productIds } }).toArray();
+    
+    if (dbProducts.length === 0) {
+       return new NextResponse("No products found for the given IDs", { status: 404 });
+    }
 
-    // Format line items for Stripe
-    const line_items = items.map((item) => {
-      let imageUrl = item.imgSrc || item.image;
+    const productMap = new Map(dbProducts.map(p => [p._id.toString(), p]));
+
+    // 3. Format line items using DB prices
+    const line_items = validItems.map((item) => {
+      const idStr = (item.id || item._id).toString();
+      const dbProduct = productMap.get(idStr);
+      
+      if (!dbProduct) {
+        throw new Error(`Product mapping failed for ID: ${idStr}`);
+      }
+
+      const price = dbProduct.salePrice || dbProduct.price;
+      const imageUrl = dbProduct.image || dbProduct.thumbnail;
       let validImage = null;
 
-      if (imageUrl) {
-         if (imageUrl.startsWith("http")) {
-            validImage = imageUrl;
-         } else if (imageUrl.startsWith("/") && process.env.NEXT_PUBLIC_APP_URL) {
-            validImage = `${process.env.NEXT_PUBLIC_APP_URL}${imageUrl}`;
-         }
+      if (imageUrl && imageUrl.startsWith("http")) {
+        validImage = imageUrl;
+      } else if (imageUrl && imageUrl.startsWith("/") && process.env.NEXT_PUBLIC_APP_URL) {
+        validImage = `${process.env.NEXT_PUBLIC_APP_URL}${imageUrl}`;
       }
 
-      // STRICT CHECK: Stripe cannot download images from localhost
       if (validImage && (validImage.includes("localhost") || validImage.includes("127.0.0.1"))) {
-         validImage = null;
-      }
-
-      // Final valid URL check
-      if (validImage && !validImage.startsWith("http")) {
          validImage = null;
       }
 
@@ -60,36 +76,48 @@ export async function POST(request) {
         price_data: {
           currency: "usd",
           product_data: {
-            name: item.name,
+            name: dbProduct.name,
             images: validImage ? [validImage] : [],
             metadata: {
-              productId: item.id || item._id,
+              productId: dbProduct._id.toString(),
             },
           },
-          unit_amount: Math.round((Number(item.price) || 0) * 100),
+          unit_amount: Math.round(price * 100),
         },
-        quantity: item.qty || 1,
+        quantity: Math.min(Math.max(1, item.qty || 1), 99),
       };
     });
 
+    const baseUrl = 
+      process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    // 4. Create Stripe Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items,
       mode: "payment",
-      success_url: `${normalizedBaseUrl}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${normalizedBaseUrl}/cart`,
+      success_url: `${baseUrl}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/cart`,
       customer_email: user?.email || email || undefined,
-      metadata: {
-        userId: user?.id || "guest",
-        cartItems: JSON.stringify(items.map(i => ({ id: i.id, qty: i.qty }))).substring(0, 500),
-      },
+      // client_reference_id is server-side and relatively safe, but session.id is the key
+      client_reference_id: user?.userId || undefined, 
+    });
+
+    // 5. Pre-create pending checkout for secure webhook resolution
+    await db.collection("pending_checkouts").insertOne({
+      sessionId: session.id,
+      userId: user?.userId || "guest",
+      userEmail: user?.email || email || null,
+      status: "pending",
+      createdAt: new Date(),
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("[STRIPE_CHECKOUT_ERROR] Full error:", error);
     return new NextResponse(
-      JSON.stringify({ error: error.message || "Internal Server Error" }), 
+      JSON.stringify({ error: "Internal Server Error" }), 
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

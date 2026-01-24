@@ -61,7 +61,7 @@ export default function ProductCard({ product }) {
           {isImageUrl ? (
             <Image
               src={imageSrc}
-              alt={product.title || "Product"}
+              alt={`Photo of ${product.title || "Product"}`}
               className="w-full h-full object-cover"
               priority
               fetchPriority="high"

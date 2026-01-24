@@ -4,11 +4,9 @@ import { cookies } from "next/headers";
 
 const secretString = process.env.JWT_SECRET;
 if (!secretString) {
-  console.error("❌ Missing JWT_SECRET env var");
+  throw new Error("❌ Missing JWT_SECRET environment variable. Session cannot be initialized.");
 }
-const secret = new TextEncoder().encode(
-  secretString || "dev-secret-key-change-in-production"
-);
+const secret = new TextEncoder().encode(secretString);
 
 export const encrypt = async (payload) => {
   return new SignJWT(payload)
@@ -33,7 +31,7 @@ export const createSession = async (userId, email, roles = []) => {
   cookieStore.set("session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     expires: expiresAt, // Set explicit browser expiration
   });

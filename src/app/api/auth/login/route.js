@@ -4,8 +4,21 @@ import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcryptjs";
 import { createSession } from "@/lib/session";
 
+import { validateRequest, rateLimit, forbiddenResponse, rateLimitResponse } from "@/lib/security";
+import { headers } from "next/headers";
+
 export async function POST(request) {
   try {
+    // 1. Validate Origin
+    const isValidRequest = await validateRequest(request);
+    if (!isValidRequest) return forbiddenResponse();
+
+    // 2. Rate Limiting (IP based)
+    const headerList = await headers();
+    const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
+    const isRateLimited = !(await rateLimit(ip, 5, 60000)); // 5 attempts per minute
+    if (isRateLimited) return rateLimitResponse();
+
     const { email, password } = await request.json();
 
     if (!email || !password) {

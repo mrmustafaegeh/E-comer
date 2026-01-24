@@ -1,8 +1,12 @@
-import clientPromise from "@/lib/mongodb";
+import { validateRequest, forbiddenResponse } from "@/lib/security";
 import { NextResponse } from "next/server";
+import clientPromise from "@/lib/mongodb";
 
 export async function POST(request) {
   try {
+    const isValidRequest = await validateRequest(request);
+    if (!isValidRequest) return forbiddenResponse();
+
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     const col = db.collection("messages");

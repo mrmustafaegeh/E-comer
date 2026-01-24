@@ -1,8 +1,11 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
+
+const ReactQueryDevtoolsLazy = process.env.NODE_ENV === "development"
+  ? lazy(() => import("@tanstack/react-query-devtools").then(m => ({ default: m.ReactQueryDevtools })))
+  : null;
 
 export default function ReactQueryProvider({ children }) {
   const [queryClient] = useState(
@@ -10,8 +13,8 @@ export default function ReactQueryProvider({ children }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            cacheTime: 10 * 60 * 1000, // 10 minutes
+            staleTime: 5 * 60 * 1000, 
+            cacheTime: 10 * 60 * 1000, 
             refetchOnWindowFocus: false,
             refetchOnMount: false,
             refetchOnReconnect: true,
@@ -24,8 +27,10 @@ export default function ReactQueryProvider({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {process.env.NODE_ENV === "development" && (
-        <ReactQueryDevtools initialIsOpen={false} />
+      {ReactQueryDevtoolsLazy && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtoolsLazy initialIsOpen={false} />
+        </Suspense>
       )}
     </QueryClientProvider>
   );
