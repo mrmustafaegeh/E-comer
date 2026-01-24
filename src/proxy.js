@@ -16,12 +16,12 @@ export async function proxy(request) {
 
     try {
       const { payload } = await jwtVerify(session, secret);
-      
+
       if (!payload.roles?.includes("admin")) {
         return NextResponse.redirect(new URL("/", request.url));
       }
     } catch (e) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      return NextResponse.redirect(new URL("/api/auth/login", request.url));
     }
   }
 
@@ -30,13 +30,13 @@ export async function proxy(request) {
     const session = request.cookies.get("session")?.value;
 
     if (!session) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      return NextResponse.redirect(new URL("/api/auth/login", request.url));
     }
 
     try {
       await jwtVerify(session, secret);
     } catch (e) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      return NextResponse.redirect(new URL("/api/auth/login", request.url));
     }
   }
 
