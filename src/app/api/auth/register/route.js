@@ -1,70 +1,65 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
-import User from "@/models/User";
-import { generateToken, setAuthCookie } from "@/lib/auth";
+import clientPromise from "@/lib/mongodb";
+import bcrypt from "bcryptjs";
 
 export async function POST(request) {
   try {
-    await connectDB();
+    const { email, password, name } = await request.json();
 
-    const body = await request.json();
-    const { name, email, password } = body;
-
-    // Validation
-    if (!name || !email || !password) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { message: "Please provide all required fields" },
+        { error: "All fields are required" },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { message: "Password must be at least 6 characters" },
+        { error: "Password must be at least 6 characters" },
         { status: 400 }
       );
     }
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB); // ✅ always same DB
+    const usersCollection = db.collection("users");
+
+    const existingUser = await usersCollection.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { message: "User already exists with this email" },
-        { status: 400 }
+        { error: "User already exists" },
+        { status: 409 }
       );
     }
 
-    // Create user
-    const user = await User.create({
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await usersCollection.insertOne({
+      email,
+      password: hashedPassword,
       name,
-      email: email.toLowerCase(),
-      password,
+      roles: ["user"],
+      createdAt: new Date(),
     });
-
-    // Generate token
-    const token = generateToken(user._id, user.role);
-
-    // Set cookie
-    setAuthCookie(token);
 
     return NextResponse.json(
       {
         success: true,
-        message: "Registration successful",
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
-        },
+        message: "User created successfully",
+        userId: result.insertedId.toString(),
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("❌ Register error:", error);
     return NextResponse.json(
-      { message: error.message || "Server error" },
+      {
+        error: "Registration failed. Please try again.",
+        details:
+          process.env.NODE_ENV === "development"
+            ? String(error?.message || error)
+            : undefined,
+      },
       { status: 500 }
     );
   }

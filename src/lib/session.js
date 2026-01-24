@@ -1,70 +1,79 @@
 import "server-only";
-import { decodeJwt, SignJWT, jwtVerify } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { Sign } from "crypto";
 
+const secretString = process.env.JWT_SECRET;
+if (!secretString) {
+  console.error("❌ Missing JWT_SECRET env var");
+}
 const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-key-change-in-production"
+  secretString || "dev-secret-key-change-in-production"
 );
 
-const encodedKey = Buffer.from(secret).toString("base64");
-console.log("🔑 JWT Secret Key (Base64):", encodedKey);
-
-export const createSession = async (userId, email, roles) => {
-  console.log("🛡️ Creating session for:", email);
-  const expiresIn = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
-  const session = await encrypt({ userId, expiresIn });
-
-  cookies().set("session", session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
-  console.log("✅ Session created and cookie set for:", email);
-};
-
-class SessionPlayload {
-  constructor(userId, email, roles, expiresIn) {
-    this.userId = userId;
-    this.email = email;
-    this.roles = roles;
-    this.expiresIn = expiresIn;
-  }
-}
-
 export const encrypt = async (payload) => {
-  return SignJWT(payload)
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(secret);
 };
 
+export const createSession = async (userId, email, roles = []) => {
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days from now
+  const token = await encrypt({
+    userId,
+    email,
+    roles,
+    expiresAt: expiresAt.getTime(),
+  });
+
+  // ✅ In Next.js 15+, cookies() is asynchronous and must be awaited
+  const cookieStore = await cookies();
+
+  cookieStore.set("session", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt, // Set explicit browser expiration
+  });
+};
+
 export const verifySession = async () => {
-  // await cookies() in Next.js 15+
+  // ✅ Must await cookies() before using .get()
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
 
-  if (!token) {
-    console.log("❌ No session token found");
-    return null;
-  }
+  if (!token) return null;
 
   try {
     const { payload } = await jwtVerify(token, secret);
-    console.log("✅ Session verified for:", payload.email);
+
+    // Validate expiration manually if stored in payload
+    if (payload?.expiresAt && payload.expiresAt < Date.now()) {
+      return null;
+    }
+
     return payload;
   } catch (e) {
-    console.error("❌ Invalid token", e);
+    console.error("❌ Invalid session token:", e?.message || e);
     return null;
   }
 };
 
 export const deleteSession = async () => {
-  // await cookies() in Next.js 15+
+  // ✅ Must await cookies() before using .delete()
   const cookieStore = await cookies();
   cookieStore.delete("session");
-  console.log("✅ Session deleted");
+};
+
+export const getCurrentUser = async () => {
+  const session = await verifySession();
+  if (!session) return null;
+
+  return {
+    userId: session.userId,
+    email: session.email,
+    roles: session.roles || [],
+  };
 };

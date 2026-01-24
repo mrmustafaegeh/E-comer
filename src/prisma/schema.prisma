@@ -4,42 +4,66 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("MONGODB_URI")
 }
 
 model Product {
-  id          String   @id @map("_id") @default(auto()) @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
+  title       String?  // Added for compatibility
+  slug        String?  @unique
   description String?
   price       Float
   salePrice   Float?
+  oldPrice    Float?   // Added for displaying original price
+  discount    String?  // Added for discount badges (e.g., "-33%")
   thumbnail   String?
   image       String?
+  emoji       String?  // Added for hero section
   category    String?
-  stock       Int       @default(0)
-  rating      Float     @default(0)
-  numReviews  Int       @default(0)
-  featured    Boolean   @default(false)
-  isFeatured  Boolean?  // Optional for older data
-  createdAt   DateTime  @default(now())
+  stock       Int      @default(0)
+  rating      Float    @default(0)
+  numReviews  Int      @default(0)
+  featured    Boolean  @default(false)
+  isFeatured  Boolean? @default(false)
+  featuredOrder Int?   // Added for hero slider order
+  gradient    String?  // Added for product card gradients
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([featured])
+  @@index([isFeatured, featuredOrder])
+}
+
+model Category {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String   @unique
+  icon         String?
+  gradient     String?
+  description  String?
+  productCount Int      @default(0)
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
 }
 
 model Order {
-  id         String   @id @map("_id") @default(auto()) @db.ObjectId
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   userId     String
   products   Json
   totalPrice Float
-  status     String   @default("processing") // processing, shipped, delivered
+  status     String   @default("processing")
   createdAt  DateTime @default(now())
 }
 
-
-
 model User {
-  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  email     String  @unique
+  email     String   @unique
   password  String
-  orders    Order[]
   createdAt DateTime @default(now())
 }

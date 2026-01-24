@@ -14,7 +14,8 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
-import LoadingSpinner from "../../../components/ui/LoadingSpinner";
+import LoadingSpinner from "../../../Component/ui/LoadingSpinner";
+import Image from "next/image";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -106,10 +107,14 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             {/* Main Image */}
             <div className="relative bg-white rounded-2xl overflow-hidden border border-gray-200 aspect-square">
-              <img
+              <Image
                 src={images[selectedImage]}
                 alt={product.title}
                 className="w-full h-full object-cover"
+                width={528} // ← ADD: original size
+                height={528} // ← ADD: original size
+                quality={85} // ← ADD: compression quality
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
               {discount > 0 && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
@@ -130,10 +135,12 @@ export default function ProductDetailPage() {
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <img
+                  <Image
                     src={img}
                     alt={`View ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 768px) 25vw, 15vw"
                   />
                 </button>
               ))}

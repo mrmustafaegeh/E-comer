@@ -1,9 +1,12 @@
-import Header from "../components/layout/Header.jsx";
-import Footer from "../components/layout/Footer.jsx";
-import ScrollToTop from "../components/ui/ScrollToTop.jsx";
-import ClientTranslationProvider from "../components/ClientTranslationProvider.jsx";
-import ReduxProvider from "./ReduxProvider.jsx";
+// src/app/layout.jsx
+import Header from "../Component/layout/Header.jsx";
+import Footer from "../Component/layout/Footer.jsx";
+import ScrollToTop from "../Component/ui/ScrollToTop.jsx";
+import ClientTranslationProvider from "../Component/ClientTranslationProvider.jsx";
+import ReduxProvider from "../providers/ReduxProvider.jsx";
+import ReactQueryProvider from "../providers/ReactQueryProvider.jsx"; // ✅ Add this
 import { AuthProvider } from "../contexts/AuthContext.js";
+import DeferredCSS from "../Component/ui/eferredCSS.jsx";
 import "./globals.css";
 import "./i18n.js";
 
@@ -19,18 +22,21 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="flex flex-col min-h-screen w-full">
-        <ReduxProvider>
-          <AuthProvider>
-            <ClientTranslationProvider>
-              <Header />
-              <ScrollToTop />
-              <main className="flex-1 w-full">{children}</main>
-              <Footer />
-            </ClientTranslationProvider>
-          </AuthProvider>
-        </ReduxProvider>
+        <DeferredCSS />
+        <ReactQueryProvider>
+          <ReduxProvider>
+            <AuthProvider>
+              <ClientTranslationProvider>
+                <Header />
+                <ScrollToTop />
+                <div className="flex-1 w-full">{children}</div>
+                <Footer />
+              </ClientTranslationProvider>
+            </AuthProvider>
+          </ReduxProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

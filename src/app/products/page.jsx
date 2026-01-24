@@ -1,71 +1,41 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import ProductList from "../../components/products/ProductsList";
-import ProductFilters from "../../components/products/ProductFilters";
-import ProductPagination from "../../components/products/ProductPagination";
-import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import EmptyState from "../../components/ui/EmptyState";
+import { useState } from "react";
+import ProductList from "../../Component/products/ProductsList";
+import ProductFilters from "../../Component/products/ProductFilters";
+import ProductPagination from "../../Component/products/ProductPagination";
+import LoadingSpinner from "../../Component/ui/LoadingSpinner";
+import EmptyState from "../../Component/ui/EmptyState";
+import { useProducts } from "../../hooks/useProducts";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
   const [localFilters, setLocalFilters] = useState({
     search: "",
     category: "",
     minPrice: "",
     maxPrice: "",
   });
+
   const [appliedFilters, setAppliedFilters] = useState({
     search: "",
     category: "",
     minPrice: "",
     maxPrice: "",
   });
+
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const limit = 12;
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
+  // ✅ Use React Query hook
+  const { data, isLoading, error, isFetching } = useProducts({
+    page,
+    limit,
+    ...appliedFilters,
+  });
 
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      });
-
-      if (appliedFilters.search) params.append("search", appliedFilters.search);
-      if (appliedFilters.category)
-        params.append("category", appliedFilters.category);
-      if (appliedFilters.minPrice)
-        params.append("minPrice", appliedFilters.minPrice);
-      if (appliedFilters.maxPrice)
-        params.append("maxPrice", appliedFilters.maxPrice);
-
-      const res = await fetch(`/api/products?${params.toString()}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setProducts(data.products || []);
-        setTotal(data.total || 0);
-      } else {
-        console.error(data.error || "Failed to fetch products");
-        setProducts([]);
-        setTotal(0);
-      }
-    } catch (err) {
-      console.error("Fetch products failed:", err);
-      setProducts([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, appliedFilters]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  const products = data?.products || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / limit);
 
   const applyFilters = () => {
     setAppliedFilters({ ...localFilters });
@@ -84,13 +54,22 @@ export default function ProductsPage() {
     setPage(1);
   };
 
-  const totalPages = Math.ceil(total / limit);
-
   const hasActiveFilters =
     appliedFilters.search ||
     appliedFilters.category ||
     appliedFilters.minPrice ||
     appliedFilters.maxPrice;
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error loading products</p>
+          <p className="text-sm text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,8 +84,15 @@ export default function ProductsPage() {
           />
         </div>
 
+        {/* Loading indicator for background fetches */}
+        {isFetching && !isLoading && (
+          <div className="text-center mb-4">
+            <span className="text-sm text-blue-600">Updating products...</span>
+          </div>
+        )}
+
         {/* Content */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner />
           </div>
@@ -132,6 +118,11 @@ export default function ProductsPage() {
           </div>
         ) : (
           <>
+            {/* Results count */}
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {products.length} of {total} products
+            </div>
+
             {/* Product Grid */}
             <div className="mb-8">
               <ProductList products={products} />

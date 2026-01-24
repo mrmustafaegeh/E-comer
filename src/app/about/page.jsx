@@ -1,4 +1,4 @@
-import AboutUs from "../../components/aboutusPage/AboutUs.jsx";
+import AboutUs from "../../Component/aboutusPage/AboutUs.jsx";
 
 export const metadata = {
   title: "About Us - QuickCart",

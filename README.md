@@ -79,7 +79,7 @@ _Live Demo: https://e-comer-webside.vercel.app_
 git clone https://github.com/mrmustafaegeh/E-comer-webside.git
 
 # Navigate to project directory
-cd E-comer-webside
+cd E-comer-website
 
 # Install dependencies
 npm install

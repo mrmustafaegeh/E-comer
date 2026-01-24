@@ -1,4 +1,4 @@
-import RegisterForm from "../../../components/auth/RegisterForm";
+import RegisterForm from "../../../Component/auth/RegisterForm";
 
 export default function RegisterPage() {
   return (
