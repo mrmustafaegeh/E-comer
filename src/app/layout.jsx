@@ -15,7 +15,7 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
   preload: true,
-  fallback: ['system-ui', 'arial'],
+  fallback: ["system-ui", "arial"],
 });
 
 const outfit = Outfit({
@@ -23,7 +23,7 @@ const outfit = Outfit({
   variable: "--font-outfit",
   display: "swap",
   preload: true,
-  fallback: ['system-ui', 'arial'],
+  fallback: ["system-ui", "arial"],
 });
 
 export const metadata = {
@@ -39,38 +39,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* ✅ Preconnect to critical origins */}
-        <link
-          rel="preconnect"
-          href="https://res.cloudinary.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="dns-prefetch"
-          href="https://res.cloudinary.com"
-        />
-        
-        {/* ✅ Preload critical fonts */}
-        <link
-          rel="preload"
-          href="/_next/static/media/inter-latin-variable.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body 
+      <head />
+      <body
         className={`${inter.variable} ${outfit.variable} flex flex-col min-h-screen w-full font-sans antialiased`}
         suppressHydrationWarning
       >
-        <a 
-          href="#main-content" 
+        <a
+          href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-[100]"
         >
           Skip to content
         </a>
-        
+
         <ReactQueryProvider>
           <ReduxProvider>
             <AuthProvider>

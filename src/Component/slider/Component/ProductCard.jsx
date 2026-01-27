@@ -1,5 +1,4 @@
 // Component/products/HeroProductCard.jsx
-"use client";
 
 import { m } from "framer-motion";
 import { memo } from "react";
@@ -11,26 +10,28 @@ function HeroProductCard({ product }) {
   // ✅ Simplified animation - no complex floating
   const cardVariants = {
     initial: { opacity: 0, scale: 0.95 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
-      transition: { duration: 0.3, ease: "easeOut" }
-    }
+      transition: { duration: 0.3, ease: "easeOut" },
+    },
   };
 
   const imageSrc = product.imageUrl;
   const fallbackEmoji = product.emoji;
-  const isImageUrl = typeof imageSrc === "string" && 
+  const isImageUrl =
+    typeof imageSrc === "string" &&
     (imageSrc.startsWith("/") || imageSrc.startsWith("http"));
 
-  const safeGradient = typeof product.gradient === "string" && 
-    product.gradient.trim().length > 0
+  const safeGradient =
+    typeof product.gradient === "string" && product.gradient.trim().length > 0
       ? product.gradient
       : "from-blue-500 to-purple-600";
 
-  const rating = product.rating !== undefined && product.rating !== null
-    ? Number(product.rating)
-    : null;
+  const rating =
+    product.rating !== undefined && product.rating !== null
+      ? Number(product.rating)
+      : null;
 
   return (
     <m.div
@@ -46,7 +47,6 @@ function HeroProductCard({ product }) {
 
       {/* Card */}
       <div className="relative bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl p-8 backdrop-blur-xl border border-white/10">
-        
         {/* ✅ Image with PROPER optimization for LCP */}
         <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-700 mb-6 flex items-center justify-center">
           {isImageUrl ? (
@@ -62,8 +62,8 @@ function HeroProductCard({ product }) {
               sizes="(max-width: 768px) 90vw, 528px"
               onError={(e) => {
                 // ✅ Fallback on error
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextSibling.style.display = 'flex';
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextSibling.style.display = "flex";
               }}
             />
           ) : (
@@ -81,7 +81,10 @@ function HeroProductCard({ product }) {
             </h3>
 
             {rating !== null && !Number.isNaN(rating) && (
-              <div className="flex items-center gap-1 shrink-0" aria-label={`Rating: ${rating} out of 5`}>
+              <div
+                className="flex items-center gap-1 shrink-0"
+                aria-label={`Rating: ${rating} out of 5`}
+              >
                 <svg
                   className="w-5 h-5 text-yellow-400 fill-current"
                   viewBox="0 0 20 20"
