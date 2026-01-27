@@ -4,30 +4,35 @@
 
 @layer base {
   :root {
-    /* Premium Font Scale */
     --font-heading: var(--font-outfit), system-ui, sans-serif;
     --font-body: var(--font-inter), system-ui, sans-serif;
   }
 
+  /* ✅ Performance: contain paint */
   html {
     @apply scroll-smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 16px; /* Base for rem scale */
+    text-rendering: optimizeLegibility;
+    font-size: 16px;
   }
 
   body {
     @apply bg-white text-gray-900;
     font-family: var(--font-body);
-    font-feature-settings: "rlig" 1, "calt" 1, "cv05" 1; /* CV05: Optimized 'l' and 'I' for Inter */
     line-height: 1.6;
     letter-spacing: -0.011em;
+    /* ✅ GPU acceleration */
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
-  /* Premium E-commerce Headings */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     @apply font-bold tracking-tight text-gray-900;
+    /* ✅ Prevent layout shift */
+    text-rendering: optimizeLegibility;
   }
 
   h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
@@ -35,43 +40,28 @@
   h3 { @apply text-2xl md:text-3xl; }
   h4 { @apply text-xl md:text-2xl; }
 
-  /* Premium Utility Classes for E-com */
-  .product-title {
-    @apply font-semibold text-lg md:text-xl tracking-tight leading-snug;
-    font-family: var(--font-heading);
+  /* ✅ Optimize images */
+  img {
+    @apply max-w-full h-auto;
+    /* ✅ Prevent layout shift */
+    height: auto;
+    max-width: 100%;
+    display: block;
   }
 
-  .product-price {
-    @apply font-bold text-2xl md:text-3xl tracking-tighter text-blue-600;
-    font-family: var(--font-heading);
-  }
-
-  .old-price {
-    @apply text-sm md:text-base text-gray-400 line-through font-medium opacity-80;
-  }
-
-  .hero-heading {
-    @apply text-5xl md:text-7xl font-extrabold tracking-tighter leading-[0.95];
-    font-family: var(--font-heading);
+  /* ✅ Reserve space for lazy images */
+  img[loading="lazy"] {
+    min-height: 1px;
+    background: #f3f4f6;
   }
 
   * {
     @apply box-border;
   }
-
-  /* ✅ Optimize image loading */
-  img {
-    @apply max-w-full h-auto object-cover;
-  }
-
-  /* ✅ Prevent layout shift */
-  img[loading="lazy"] {
-    min-height: 1px;
-  }
 }
 
-/* ✅ Custom scrollbar */
 @layer utilities {
+  /* ✅ Hide scrollbar */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -84,15 +74,46 @@
   /* ✅ Skeleton loader */
   .skeleton {
     @apply animate-pulse bg-gray-200 rounded;
+    background: linear-gradient(
+      90deg,
+      #f3f4f6 25%,
+      #e5e7eb 50%,
+      #f3f4f6 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
   }
 
-  /* ✅ Smooth animations */
-  .transition-base {
-    @apply transition-all duration-200 ease-in-out;
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* ✅ Performance utilities */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .contain-paint {
+    contain: paint;
+  }
+
+  .contain-layout {
+    contain: layout;
   }
 }
 
-/* ✅ Reduce motion for accessibility */
+/* ✅ Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -101,5 +122,38 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ✅ Focus visible (accessibility) */
+@media (prefers-reduced-motion: no-preference) {
+  :focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* ✅ Print styles */
+@media print {
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
   }
 }

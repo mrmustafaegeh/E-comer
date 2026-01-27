@@ -1,3 +1,4 @@
+// Component/products/ProductCard.jsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { wishlistItems, toggleWishlist } = useWishlist();
   const [isAdding, setIsAdding] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const safeWishlist = wishlistItems ?? [];
   const isWishlisted = safeWishlist.some((item) => item._id === product._id);
@@ -42,56 +44,66 @@ function ProductCard({ product }) {
     : 0;
 
   return (
-    <div
-      className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 cursor-pointer"
+    <article
+      className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 cursor-pointer"
       onClick={() => router.push(`/products/${product._id}`)}
     >
-      {/* Image Container */}
+      {/* Image Container - ✅ Optimized */}
       <div className="relative overflow-hidden bg-gray-50 aspect-square">
-        <Image
-          src={product.image || "/images/default-product.png"}
-          alt={product.title}
-          className="object-cover group-hover:scale-110 transition-transform duration-500"
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          quality={75} 
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
-        />
+        {!imageError ? (
+          <Image
+            src={product.image || "/images/default-product.png"}
+            alt={product.title}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            quality={75}
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <span className="text-4xl">📦</span>
+          </div>
+        )}
+
         {/* Badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
           {discount > 0 && (
-            <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-lg">
+            <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md">
               -{discount}%
             </span>
           )}
           {product.rating >= 4.5 && (
-            <span className="bg-yellow-400 text-gray-900 px-2.5 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
-              <Star className="w-3 h-3 fill-current" />
+            <span className="bg-yellow-400 text-gray-900 px-2.5 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+              <Star className="w-3 h-3 fill-current" aria-hidden="true" />
               {product.rating}
             </span>
           )}
         </div>
+
         {/* Wishlist Button */}
         <button
           onClick={handleToggleWishlist}
-          className={`absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 ${
+          className={`absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-sm transition-all duration-200 ${
             isWishlisted
-              ? "bg-red-500 text-white shadow-lg scale-110"
-              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-white hover:scale-110"
+              ? "bg-red-500 text-white shadow-lg"
+              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-white"
           }`}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`} />
         </button>
+
         {/* Quick Add Overlay */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4">
           <button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className="w-full bg-white text-gray-900 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-white text-gray-900 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Add to cart"
           >
-            <ShoppingCart className="w-4 h-4" />
+            <ShoppingCart className="w-4 h-4" aria-hidden="true" />
             {isAdding ? "Added!" : "Quick Add"}
           </button>
         </div>
@@ -105,14 +117,14 @@ function ProductCard({ product }) {
         </p>
 
         {/* Title */}
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition">
+        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition-colors">
           {product.title}
         </h3>
 
         {/* Rating */}
         {product.rating > 0 && (
           <div className="flex items-center gap-1 mb-3">
-            <div className="flex">
+            <div className="flex" role="img" aria-label={`Rating: ${product.rating} out of 5 stars`}>
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -121,6 +133,7 @@ function ProductCard({ product }) {
                       ? "text-yellow-400 fill-current"
                       : "text-gray-300"
                   }`}
+                  aria-hidden="true"
                 />
               ))}
             </div>
@@ -159,7 +172,7 @@ function ProductCard({ product }) {
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

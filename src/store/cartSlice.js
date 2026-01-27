@@ -1,11 +1,24 @@
 // app/store/cartSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
+import { products } from "../data/productData";
+
 // Helper function to get initial state from localStorage (client-side only)
 const getInitialState = () => {
   if (typeof window !== "undefined") {
     const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
+    const cartItems = saved ? JSON.parse(saved) : [];
+
+    // Validate cart items against the product data
+    const validatedCartItems = cartItems.filter((item) => {
+      return products.some((product) => product.id === item.id);
+    });
+
+    if (validatedCartItems.length !== cartItems.length) {
+      localStorage.setItem("cart", JSON.stringify(validatedCartItems));
+    }
+
+    return validatedCartItems;
   }
   return [];
 };

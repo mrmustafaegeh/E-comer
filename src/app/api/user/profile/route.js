@@ -15,38 +15,40 @@ export async function GET() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     
-    // Convert ID safely
     const userId = new ObjectId(session.userId);
 
     const user = await db.collection("users").findOne(
       { _id: userId },
-      { projection: { password: 0 } } // Exclude password
+      { projection: { password: 0 } }
     );
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
+    return NextResponse.json(
+      {
         name: user.name,
         email: user.email,
         image: user.image,
-        address: user.address, 
+        address: user.address,
         phone: user.phone,
-        role: user.role || user.roles
-    }, {
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-        "Pragma": "no-cache",
+        role: user.role || user.roles,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
       }
-    });
-
+    );
   } catch (error) {
     console.error("PROFILE GET ERROR:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
-
 
 export async function PUT(request) {
   try {
@@ -69,20 +71,22 @@ export async function PUT(request) {
     const updateData = {};
     if (name) updateData.name = name;
     if (image) updateData.image = image;
-    if (address) updateData.address = address; // Can be object or string
+    if (address) updateData.address = address;
     if (phone) updateData.phone = phone;
 
     updateData.updatedAt = new Date();
 
-    const result = await db.collection("users").updateOne(
-        { _id: userId },
-        { $set: updateData }
+    await db.collection("users").updateOne(
+      { _id: userId },
+      { $set: updateData }
     );
 
     return NextResponse.json({ success: true, message: "Profile updated" });
-
   } catch (error) {
     console.error("PROFILE PUT ERROR:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

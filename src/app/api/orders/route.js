@@ -26,20 +26,17 @@ export async function GET(request) {
 
     const [orders, total] = await Promise.all([
       col
-        .find(
-          query,
-          {
-            projection: {
-              userId: 1,
-              products: 1,
-              totalPrice: 1,
-              status: 1,
-              createdAt: 1,
-              shippingAddress: 1,
-              paymentMethod: 1,
-            },
-          }
-        )
+        .find(query, {
+          projection: {
+            userId: 1,
+            products: 1,
+            totalPrice: 1,
+            status: 1,
+            createdAt: 1,
+            shippingAddress: 1,
+            paymentMethod: 1,
+          },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -59,10 +56,10 @@ export async function GET(request) {
       totalPages: Math.ceil(total / limit),
     });
 
-    // ✅ Orders are user-specific - short private cache only
+    // ✅ User-specific → short private cache (bfcache-safe)
     response.headers.set(
       "Cache-Control",
-      "private, max-age=30, must-revalidate"
+      "private, max-age=30, stale-while-revalidate=60"
     );
 
     return response;

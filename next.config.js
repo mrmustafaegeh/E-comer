@@ -6,9 +6,9 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig = {
-  // ✅ Empty turbopack config to silence the warning
-  turbopack: {},
   reactStrictMode: true,
+  
+  // ✅ Image optimization
   images: {
     remotePatterns: [
       {
@@ -28,6 +28,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "lv4ihdf4sxac4yjo.public.blob.vercel-storage.com",
         pathname: "/**",
       },
@@ -39,24 +44,27 @@ const nextConfig = {
     ],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    qualities: [75, 85],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    qualities: [25, 50, 75],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
+  // ✅ Production optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
 
   poweredByHeader: false,
   compress: true,
 
+  // ✅ Experimental features
   experimental: {
     optimizeCss: true,
     optimizePackageImports: [
-      "recharts",
       "lucide-react",
       "framer-motion",
       "react-icons",
@@ -64,6 +72,7 @@ const nextConfig = {
     ],
   },
 
+  // ✅ Security headers
   async headers() {
     return [
       {
@@ -90,16 +99,8 @@ const nextConfig = {
             value: "1; mode=block",
           },
           {
-            key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains; preload",
-          },
-          {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: "object-src 'none'; base-uri 'self'; default-src 'self'; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },
@@ -112,10 +113,17 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/fonts/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
   },
-
-  
 };
 
 export default process.env.ANALYZE ? bundleAnalyzer(nextConfig) : nextConfig;

@@ -5,8 +5,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import LoadingSpinner from "../../../Component/ui/LoadingSpinner";
 
-// Dynamically import heavy dashboard components
-const StatGrid = dynamic(() => import("../../../Component/dashboard/StatGrid"), { ssr: false });
+const StatGrid = dynamic(
+  () => import("../../../Component/dashboard/StatGrid"),
+  { loading: () => <div className="h-32 animate-pulse bg-gray-100 rounded-xl" /> }
+);
+
 const RecentOrdersTable = dynamic(() => import("../../../Component/dashboard/RecentOrdersTable"), { ssr: false });
 const QuickActions = dynamic(() => import("../../../Component/dashboard/QuickActions"), { ssr: false });
 const ActivityFeed = dynamic(() => import("../../../Component/dashboard/ActivityFeed"), { ssr: false });

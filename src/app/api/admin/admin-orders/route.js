@@ -27,15 +27,8 @@ export async function GET(request) {
 
     const skip = (page - 1) * limit;
 
-
-
     const [orders, total] = await Promise.all([
-      col
-        .find(filter)
-        .sort(parseSort(sort))
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
+      col.find(filter).sort(parseSort(sort)).skip(skip).limit(limit).toArray(),
       col.countDocuments(filter),
     ]);
 
@@ -59,9 +52,10 @@ export async function GET(request) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0",
+          "Cache-Control":
+            process.env.NODE_ENV === "production"
+              ? "private, max-age=30, stale-while-revalidate=60"
+              : "no-store",
         },
       }
     );
@@ -86,23 +80,8 @@ export async function POST(request) {
     const products = body.products;
     const totalPrice = Number(body.totalPrice);
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "userId is required" },
-        { status: 400 }
-      );
-    }
-    if (!products) {
-      return NextResponse.json(
-        { error: "products is required" },
-        { status: 400 }
-      );
-    }
-    if (!Number.isFinite(totalPrice)) {
-      return NextResponse.json(
-        { error: "Valid totalPrice is required" },
-        { status: 400 }
-      );
+    if (!userId || !products || !Number.isFinite(totalPrice)) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
     const doc = {
