@@ -8,12 +8,15 @@ const getApiBaseUrl = () => {
   }
 
   // Server-side
-  return (
-    process.env.NEXT_PUBLIC_API_URL ||
-    (process.env.NODE_ENV === "production"
-      ? "https://e-comer-webside-1bo2.vercel.app/api"
-      : "http://localhost:3000/api")
-  );
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api`;
+  }
+
+  return "http://localhost:3000/api";
 };
 
 const getBackendBaseUrl = () => {

@@ -1,5 +1,7 @@
 
 import { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
 import HeroSlider from "../Component/slider/HeroSlider";
 import FeaturedProductsClient from "../Component/features/FeaturedProductsClient";
 import { get } from "../services/api";
