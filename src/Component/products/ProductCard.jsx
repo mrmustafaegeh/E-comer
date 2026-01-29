@@ -8,10 +8,13 @@ import { Heart, ShoppingCart, Star } from "lucide-react";
 import { useState, memo } from "react";
 import Image from "next/image";
 
+import { useAuth } from "../../contexts/AuthContext"; // ✅ Added import
+
 function ProductCard({ product }) {
   const router = useRouter();
   const { addToCart } = useCart();
   const { wishlistItems, toggleWishlist } = useWishlist();
+  const { user } = useAuth(); // ✅ Get user
   const [isAdding, setIsAdding] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -36,6 +39,13 @@ function ProductCard({ product }) {
 
   const handleToggleWishlist = (e) => {
     e.stopPropagation();
+    
+    // ✅ Enforce Login for Wishlist
+    if (!user) {
+      router.push("/auth/login?redirect=/wishlist"); 
+      return;
+    }
+
     toggleWishlist(product);
   };
 
