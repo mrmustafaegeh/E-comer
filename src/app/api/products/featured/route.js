@@ -1,7 +1,8 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+// Shared data fetching logic
+export async function getFeaturedProductsData() {
   const startTime = Date.now();
 
   try {
@@ -37,7 +38,7 @@ export async function GET() {
         }
       )
       .sort({ rating: -1 })
-      .limit(8) // Increase to 8 for better display
+      .limit(8)
       .toArray();
 
     const fixedProducts = products.map((p) => ({
@@ -63,12 +64,22 @@ export async function GET() {
       console.log(`✅ Featured products: ${fixedProducts.length} in ${ms}ms`);
     }
 
+    return fixedProducts;
+  } catch (err) {
+    console.error("FEATURED PRODUCTS DATA ERROR:", err);
+    return [];
+  }
+}
+
+export async function GET() {
+  try {
+    const products = await getFeaturedProductsData();
+    
     const response = NextResponse.json({
       success: true,
-      products: fixedProducts,
+      products,
     });
 
-    // ✅ Featured products cache for 10 minutes
     response.headers.set(
       "Cache-Control",
       process.env.NODE_ENV === "production"

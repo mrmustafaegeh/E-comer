@@ -18,7 +18,8 @@ function calcDiscount(price, oldPrice) {
   return `-${pct}%`;
 }
 
-export async function GET() {
+// Shared data fetching logic
+export async function getHeroProductsData() {
   const startTime = Date.now();
 
   try {
@@ -60,7 +61,7 @@ export async function GET() {
         _id: p._id.toString(),
         title: p.title || p.name || "Untitled",
         price,
-        offerPrice: rawPrice, // ✅ Add for ProductCard compatibility
+        offerPrice: rawPrice,
         oldPrice,
         discount,
         rating: Number.isFinite(Number(p.rating)) ? Number(p.rating) : 4.5,
@@ -75,10 +76,20 @@ export async function GET() {
     if (process.env.NODE_ENV === "development") {
       console.log(`🖼️ Hero products: ${products.length} in ${ms}ms`);
     }
+    
+    return products;
+  } catch (error) {
+    console.error("HERO PRODUCTS DATA ERROR:", error);
+    return [];
+  }
+}
+
+export async function GET() {
+  try {
+    const products = await getHeroProductsData();
 
     const response = NextResponse.json({ success: true, products });
 
-    // ✅ Hero products cache for 10 minutes
     response.headers.set(
       "Cache-Control",
       process.env.NODE_ENV === "production"

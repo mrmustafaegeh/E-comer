@@ -1,10 +1,10 @@
-
 import { Suspense } from 'react';
-
-export const dynamic = 'force-dynamic';
 import HeroSlider from "../Component/slider/HeroSlider";
 import FeaturedProductsClient from "../Component/features/FeaturedProductsClient";
-import { get } from "../services/api";
+import { getHeroProductsData } from "./api/hero-products/route";
+import { getFeaturedProductsData } from "./api/products/featured/route";
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: "My Shop - Best Products for You",
@@ -16,35 +16,13 @@ export const metadata = {
   }
 };
 
-async function getData() {
-  try {
-    // Parallel data fetching for performance
-    const [heroRes, featuredRes] = await Promise.all([
-      get("/hero-products").catch(err => {
-        console.error("Hero fetch error:", err);
-        return null; 
-      }),
-      get("/products/featured").catch(err => {
-         console.error("Featured fetch error:", err);
-         return null;
-      })
-    ]);
-
-    return {
-      heroProducts: heroRes?.products || [],
-      // Handle different api responses (sometimes nested in products, sometimes direct array)
-      featuredProducts: featuredRes?.products || (Array.isArray(featuredRes) ? featuredRes : [])
-    };
-  } catch (error) {
-    console.error("Failed to fetch page data:", error);
-    return { heroProducts: [], featuredProducts: [] };
-  }
-}
-
 export default async function HomePage() {
-  // Fetch data on the server (SSR)
-  // This ensures the initial HTML contains the product data, improving SEO and LCP.
-  const { heroProducts, featuredProducts } = await getData();
+  // Fetch data directly from the database logic (Server Component Pattern)
+  // This avoids internal API calls which can fail during build/deployment
+  const [heroProducts, featuredProducts] = await Promise.all([
+    getHeroProductsData(),
+    getFeaturedProductsData()
+  ]);
 
   return (
     <main className="bg-gray-50 min-h-screen">
