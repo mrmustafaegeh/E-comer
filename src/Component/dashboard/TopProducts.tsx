@@ -1,7 +1,7 @@
-// src/components/admin/TopProducts.tsx
+"use client";
+
 import Image from "next/image";
-import { TrendingUp, Star } from "lucide-react";
-import { Package } from "lucide-react";
+import { TrendingUp, Package, ChevronRight } from "lucide-react";
 import React from "react";
 
 interface Product {
@@ -20,63 +20,55 @@ interface TopProductsProps {
 export default function TopProducts({ products }: TopProductsProps) {
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-6">
-        <div className="text-gray-400 mb-2">No products yet</div>
-        <p className="text-gray-500 text-sm">Add products to see them here</p>
+      <div className="text-center py-12">
+        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No assets recorded</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {products.map((product, index) => (
+    <div className="space-y-2">
+      {products.map((product) => (
         <div
           key={product.id}
-          className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+          className="group flex items-center justify-between p-4 bg-white hover:bg-gray-50 border border-transparent hover:border-gray-100 rounded-2xl transition-all duration-300 cursor-pointer"
         >
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+          <div className="flex items-center gap-4">
+            <div className="relative w-14 h-14 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group-hover:scale-110 transition-transform">
               {product.image ? (
                 <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                sizes="48px" 
-                className="object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                }}
-              />
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                  <Package className="w-6 h-6 text-gray-400" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <Package className="w-6 h-6 text-gray-300" />
                 </div>
               )}
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">{product.name}</h4>
-              <div className="flex items-center gap-4 mt-1">
-                <span className="text-xs text-gray-500">
-                  {product.sales} sales
+              <h4 className="text-sm font-black text-gray-900 tracking-tight mb-1">{product.name}</h4>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {product.sales} units
                 </span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    product.stock > 10
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
+                <span className={`w-1 h-1 rounded-full ${product.stock > 10 ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                   Stock: {product.stock}
                 </span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-semibold text-gray-900">
+            <div className="text-sm font-black text-gray-900 tracking-tight">
               ${product.revenue.toLocaleString()}
             </div>
-            <div className="text-xs text-gray-500">Revenue</div>
+            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center justify-end gap-1">
+               Rev. <TrendingUp size={10} />
+            </p>
           </div>
         </div>
       ))}

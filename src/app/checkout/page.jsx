@@ -7,11 +7,17 @@ import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
 import { post } from "../../services/api";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CreditCard, MapPin, Truck } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, Truck, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading checkout...</div>}>
+    <Suspense fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+            <Loader2 className="animate-spin w-10 h-10 text-gray-900 mb-4" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Constructing Checkout Terminal...</p>
+        </div>
+    }>
       <CheckoutContent />
     </Suspense>
   );
@@ -34,14 +40,12 @@ function CheckoutContent() {
     paymentMethod: "cod",
   });
 
-  // Redirect if cart is empty
   useEffect(() => {
     if (cartItems.length === 0) {
       router.push("/cart");
     }
   }, [cartItems, router]);
 
-  // Pre-fill name if user exists
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -58,8 +62,7 @@ function CheckoutContent() {
 
   const calculateTotal = () => {
     const subtotal = Number(cartTotal) || 0;
-    const shipping = 0; // Free shipping
-    return subtotal + shipping;
+    return subtotal;
   };
 
   const handleSubmit = async (e) => {
@@ -68,57 +71,32 @@ function CheckoutContent() {
     setError("");
 
     if (!user) {
-      setError("You must be logged in to place an order.");
+      setError("Protocol Error: Identity authentication required.");
       setLoading(false);
       return;
     }
 
     try {
-      // Stripe Payment Flow
       if (formData.paymentMethod === "stripe") {
-        console.log("Initiating Stripe checkout...");
-        console.log("Cart items:", cartItems);
-        
-        try {
-          const response = await post("/checkout/session", {
-            items: cartItems.map(item => ({
-              id: item.id || item._id,
-              name: item.name,
-              price: item.price,
-              qty: item.qty,
-              imgSrc: item.imgSrc || item.image,
-            })),
-            email: user?.email,
-          });
+        const response = await post("/checkout/session", {
+          items: cartItems.map(item => ({
+            id: item.id || item._id,
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+            imgSrc: item.imgSrc || item.image,
+          })),
+          email: user?.email,
+        });
 
-          console.log("Stripe response:", response);
-
-          if (response && response.url) {
-            // Redirect to Stripe Checkout
-            window.location.href = response.url;
-            return;
-          } else {
-            throw new Error("No checkout URL returned from server");
-          }
-        } catch (stripeError) {
-          console.error("Stripe checkout error:", stripeError);
-          
-          // More detailed error handling
-          let stripeErrorMsg = "Failed to initiate Stripe checkout.";
-          
-          if (stripeError.response?.data?.error) {
-            stripeErrorMsg = stripeError.response.data.error;
-          } else if (stripeError.message) {
-            stripeErrorMsg = stripeError.message;
-          }
-          
-          setError(stripeErrorMsg + " Please try again or use Cash on Delivery.");
-          setLoading(false);
+        if (response && response.url) {
+          window.location.href = response.url;
           return;
+        } else {
+          throw new Error("No secure gateway URL returned.");
         }
       }
 
-      // Cash on Delivery Flow
       const orderPayload = {
         userId: user.id || user._id,
         products: cartItems.map((item) => ({
@@ -141,31 +119,10 @@ function CheckoutContent() {
       };
 
       await post("/orders", orderPayload);
-
       clearCart();
       router.push("/orders/success");
     } catch (err) {
-      console.error("Checkout error:", err);
-      
-      let errorMessage = "Failed to place order. Please try again.";
-      
-      if (err.response) {
-        if (err.response.data && typeof err.response.data === 'object' && err.response.data.error) {
-           errorMessage = err.response.data.error;
-        } else if (err.response.data && typeof err.response.data === 'string') {
-           if (err.response.data.includes("<!DOCTYPE html>")) {
-             errorMessage = "Server error. Please check your connection or try again later.";
-           } else {
-             errorMessage = err.response.data;
-           }
-        } else if (err.message) {
-           errorMessage = err.message;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      setError(errorMessage);
+      setError(err.message || "Transmission Failure. Retry protocol.");
     } finally {
       setLoading(false);
     }
@@ -174,241 +131,172 @@ function CheckoutContent() {
   if (cartItems.length === 0) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          Back to Cart
-        </button>
+    <div className="min-h-screen bg-white">
+      {/* Decorative Layer */}
+      <div className="fixed inset-0 border-[24px] border-gray-50 pointer-events-none z-50 hidden lg:block" />
+      
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20 md:py-32 relative z-10">
+        <header className="mb-20">
+            <button
+                onClick={() => router.back()}
+                className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors mb-8"
+            >
+                <ArrowLeft size={14} strokeWidth={3} /> Return to Bag
+            </button>
+            <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tighter leading-none">Checkout.</h1>
+        </header>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column: Form */}
-          <div className="space-y-8">
-            {/* Shipping Address */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                  <MapPin size={24} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 xl:gap-24">
+          {/* Left: Input Segments */}
+          <div className="lg:col-span-7 space-y-16">
+            
+            {/* 01 Logistics */}
+            <section className="space-y-10">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">01 Logistic Destination</h2>
+                    <ShieldCheck size={18} className="text-gray-200" />
                 </div>
-                <h2 className="text-xl font-semibold">Shipping Information</h2>
-              </div>
+                
+                <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Consignee Name</label>
+                        <input name="fullName" required value={formData.fullName} onChange={handleInputChange} className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight" placeholder="Full Legal Name" />
+                    </div>
 
-              <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    name="fullName"
-                    required
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="John Doe"
-                  />
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Address Entry</label>
+                        <input name="address" required value={formData.address} onChange={handleInputChange} className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight" placeholder="Street, Apartment, Suite" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Metropolis (City)</label>
+                            <input name="city" required value={formData.city} onChange={handleInputChange} className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight" placeholder="City" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Locality Code</label>
+                            <input name="zipCode" required value={formData.zipCode} onChange={handleInputChange} className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight" placeholder="000000" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sovereign State (Country)</label>
+                        <select name="country" required value={formData.country} onChange={handleInputChange} className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight appearance-none">
+                            <option value="">Select Territory</option>
+                            <option value="US">United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="AU">Australia</option>
+                        </select>
+                    </div>
+                </form>
+            </section>
+
+            {/* 02 Transaction */}
+            <section className="space-y-10 pb-12">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">02 Transaction Protocol</h2>
+                    <CreditCard size={18} className="text-gray-200" />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
-                  </label>
-                  <input
-                    name="address"
-                    required
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="123 Main St, Apt 4B"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className={`group flex items-center p-6 rounded-3xl cursor-pointer transition-all border-2 ${
+                        formData.paymentMethod === "cod" ? "bg-gray-900 border-gray-900" : "bg-gray-50 border-gray-50 hover:bg-white hover:border-gray-200"
+                    }`}>
+                        <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === "cod"} onChange={handleInputChange} className="hidden" />
+                        <div className="flex-1">
+                            <p className={`text-xs font-black uppercase tracking-widest mb-1 ${formData.paymentMethod === "cod" ? "text-white" : "text-gray-900"}`}>Terminal Delivery</p>
+                            <p className={`text-[10px] font-bold ${formData.paymentMethod === "cod" ? "text-gray-400" : "text-gray-400"}`}>Pay on arrival</p>
+                        </div>
+                        <Truck className={formData.paymentMethod === "cod" ? "text-white" : "text-gray-300"} size={24} />
                     </label>
-                    <input
-                      name="city"
-                      required
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                      placeholder="New York"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ZIP Code
+
+                    <label className={`group flex items-center p-6 rounded-3xl cursor-pointer transition-all border-2 ${
+                        formData.paymentMethod === "stripe" ? "bg-gray-900 border-gray-900" : "bg-gray-50 border-gray-50 hover:bg-white hover:border-gray-200"
+                    }`}>
+                        <input type="radio" name="paymentMethod" value="stripe" checked={formData.paymentMethod === "stripe"} onChange={handleInputChange} className="hidden" />
+                        <div className="flex-1">
+                            <p className={`text-xs font-black uppercase tracking-widest mb-1 ${formData.paymentMethod === "stripe" ? "text-white" : "text-gray-900"}`}>Digital Clearance</p>
+                            <p className={`text-[10px] font-bold ${formData.paymentMethod === "stripe" ? "text-gray-400" : "text-gray-400"}`}>Secure stripe gateway</p>
+                        </div>
+                        <CreditCard className={formData.paymentMethod === "stripe" ? "text-white" : "text-gray-300"} size={24} />
                     </label>
-                    <input
-                      name="zipCode"
-                      required
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                      placeholder="10001"
-                    />
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Country
-                  </label>
-                  <select
-                    name="country"
-                    required
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
-                  >
-                    <option value="">Select Country</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="AU">Australia</option>
-                  </select>
-                </div>
-              </form>
-            </div>
-
-            {/* Payment Method */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
-                  <CreditCard size={24} />
-                </div>
-                <h2 className="text-xl font-semibold">Payment Method</h2>
-              </div>
-
-              <div className="space-y-3">
-                <label className={`flex items-center p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors ${
-                  formData.paymentMethod === "cod" ? "border-blue-500 bg-blue-50/50" : "border-gray-200"
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cod"
-                    checked={formData.paymentMethod === "cod"}
-                    onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 font-medium text-gray-900">
-                    Cash on Delivery (COD)
-                  </span>
-                  <Truck className="ml-auto text-gray-400" size={20} />
-                </label>
-
-                <label className={`flex items-center p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors ${
-                  formData.paymentMethod === "stripe" ? "border-purple-500 bg-purple-50/50" : "border-gray-200"
-                }`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="stripe"
-                    checked={formData.paymentMethod === "stripe"}
-                    onChange={handleInputChange}
-                    className="w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500"
-                  />
-                  <span className="ml-3 font-medium text-gray-900">
-                    Pay with Stripe
-                  </span>
-                  <CreditCard className="ml-auto text-gray-400" size={20} />
-                </label>
-              </div>
-            </div>
+            </section>
           </div>
 
-          {/* Right Column: Summary */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-6">
-              <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
+          {/* Right: Summary */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-32 space-y-8 bg-gray-50 p-8 md:p-12 rounded-[3rem] border border-gray-100">
+                <div className="flex items-center justify-between border-b border-gray-200/50 pb-4">
+                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Asset Verification</h2>
+                    <span className="text-[10px] font-black text-gray-900 bg-white px-3 py-1 rounded-full border border-gray-200">{cartItems.length} IDs</span>
+                </div>
 
-              <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
-                      <Image
-                        src={item.imgSrc || item.image || "/images/placeholder.png"}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        sizes="64px"
-                      />
-                      <span className="absolute bottom-0 right-0 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded-tl-md">
-                        x{item.qty}
-                      </span>
+                <div className="space-y-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {cartItems.map((item) => (
+                        <div key={item.id} className="flex gap-6 items-center">
+                            <div className="relative w-16 h-20 bg-white rounded-2xl overflow-hidden border border-gray-200 flex-shrink-0">
+                                <img src={item.imgSrc || item.image || "/images/placeholder.png"} alt={item.name} className="w-full h-full object-cover" />
+                                <div className="absolute inset-x-0 bottom-0 bg-gray-900/80 backdrop-blur-sm text-white text-[8px] font-black uppercase tracking-widest text-center py-1">QTY: {item.qty}</div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-black text-gray-900 tracking-tight truncate">{item.name}</h4>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">${Number(item.price).toFixed(2)} / Unit</p>
+                            </div>
+                            <div className="text-sm font-black text-gray-900 tracking-tighter">${(Number(item.price) * item.qty).toFixed(2)}</div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-gray-200/50">
+                    <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-gray-400 uppercase tracking-widest">Asset Value</span>
+                        <span className="font-black text-gray-900">${Number(cartTotal).toFixed(2)}</span>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
-                        {item.name}
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        ${Number(item.price).toFixed(2)}
-                      </p>
+                    <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-gray-400 uppercase tracking-widest">Logistic Fee</span>
+                        <span className="font-black text-green-600 uppercase tracking-widest text-[8px]">Waived</span>
                     </div>
-                    <div className="text-sm font-medium text-gray-900">
-                      ${(Number(item.price) * item.qty).toFixed(2)}
+                </div>
+
+                <div className="pt-6 border-t border-gray-200/50">
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Requirement</p>
+                            <p className="text-4xl font-black text-gray-900 tracking-tighter">${calculateTotal().toFixed(2)}</p>
+                        </div>
+                        <ShieldCheck size={32} strokeWidth={1} className="text-gray-200" />
                     </div>
-                  </div>
-                ))}
-              </div>
 
-              <div className="border-t border-gray-100 pt-4 space-y-2">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>${Number(cartTotal).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span className="text-green-600 font-medium">Free</span>
-                </div>
-              </div>
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-6 p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-red-100">{error}</motion.div>
+                        )}
+                    </AnimatePresence>
 
-              <div className="border-t border-gray-100 pt-4 mt-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900">Total</span>
-                  <span className="text-2xl font-bold text-blue-600">
-                    ${calculateTotal().toFixed(2)}
-                  </span>
+                    <button
+                        type="submit"
+                        form="checkout-form"
+                        disabled={loading || !user}
+                        className="w-full bg-gray-900 text-white py-6 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-2xl shadow-gray-200 flex items-center justify-center gap-3 group disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="animate-spin" size={18} strokeWidth={3} />
+                                Processing...
+                            </>
+                        ) : (
+                            <>
+                                {formData.paymentMethod === "stripe" ? "Redirect to Gateway" : "Execute Order"}
+                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
+                    </button>
+                    {!user && (
+                        <p className="text-[8px] font-black text-center text-red-400 mt-4 uppercase tracking-[0.2em]">* Unauthorized: Identity synchronization required</p>
+                    )}
                 </div>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                form="checkout-form"
-                disabled={loading || !user}
-                className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    {formData.paymentMethod === "stripe" ? "Proceed to Stripe" : "Place Order"}
-                    <ArrowLeft className="rotate-180" size={20} />
-                  </>
-                )}
-              </button>
-              
-              {!user && (
-                 <p className="text-xs text-center text-red-500 mt-2">
-                   * You must be logged in to complete purchase
-                 </p>
-              )}
             </div>
           </div>
         </div>

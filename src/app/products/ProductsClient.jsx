@@ -34,7 +34,7 @@ export default function ProductsClient() {
     maxPrice: currentMaxPrice,
   });
 
-  // Sync local filters if URL changes externally (e.g. back button)
+  // Sync local filters if URL changes externally
   useEffect(() => {
     setLocalFilters({
       search: currentSearch,
@@ -44,7 +44,7 @@ export default function ProductsClient() {
     });
   }, [currentSearch, currentCategory, currentMinPrice, currentMaxPrice]);
 
-  // Use React Query - it will pick up the dehydrated state from server
+  // Use React Query
   const { data, isLoading, error, isFetching } = useProducts({
     page: currentPage,
     limit,
@@ -58,16 +58,12 @@ export default function ProductsClient() {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
-  // Update URL to trigger new fetch/state
+  // Update URL function
   const updateUrl = (newParams) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    // Reset to page 1 on filter change
-    if (newParams.page) {
-      params.set("page", newParams.page);
-    } else {
-      params.set("page", "1"); 
-    }
+    if (newParams.page) params.set("page", newParams.page);
+    else params.set("page", "1"); 
 
     if (newParams.search !== undefined) {
       if (newParams.search) params.set("search", newParams.search);
@@ -98,7 +94,7 @@ export default function ProductsClient() {
       category: localFilters.category,
       minPrice: localFilters.minPrice,
       maxPrice: localFilters.maxPrice,
-      page: 1 // Reset page
+      page: 1
     });
   };
 
@@ -114,17 +110,12 @@ export default function ProductsClient() {
   };
 
   const handlePageChange = (newPage) => {
-    // Only update page param
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`?${params.toString()}`, { scroll: true });
   };
 
-  const hasActiveFilters =
-    currentSearch ||
-    currentCategory ||
-    currentMinPrice ||
-    currentMaxPrice;
+  const hasActiveFilters = currentSearch || currentCategory || currentMinPrice || currentMaxPrice;
 
   if (error) {
     return (
@@ -139,7 +130,6 @@ export default function ProductsClient() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Filters Full Width */}
       <div className="w-full">
         <ProductFilters
           localFilters={localFilters}
@@ -150,15 +140,12 @@ export default function ProductsClient() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 pb-24">
-        
-        {/* Loading indicator for background fetches */}
         {isFetching && !isLoading && (
           <div className="text-center mb-4">
             <span className="text-xs text-gray-500 uppercase tracking-widest">Updating...</span>
           </div>
         )}
 
-        {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center py-32">
             <LoadingSpinner />
@@ -186,17 +173,13 @@ export default function ProductsClient() {
           </div>
         ) : (
           <>
-            {/* Results count minimal */}
             <div className="mb-8 text-xs text-gray-400 uppercase tracking-widest text-right">
               {products.length} Items
             </div>
-
-            {/* Product Grid */}
             <div className="mb-16">
               <ProductList products={products} />
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center border-t border-gray-100 pt-12">
                 <ProductPagination

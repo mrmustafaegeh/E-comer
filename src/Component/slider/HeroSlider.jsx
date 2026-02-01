@@ -10,7 +10,6 @@ import HeroProductCard from "./Component/ProductCard";
 import HeroTitle from "./Component/HeroTitle";
 import CTAButtons from "./Component/CtpButton";
 import ProductIndicators from "./Component/ProductIndicators";
-import FeaturedCategories from "../categories/FeaturedCategories";
 
 // ✅ Lazy loaded components - strictly non-critical/interactive only
 const AnimatedBadge = dynamic(() => import("./Component/AnimatedBadge"), {
@@ -174,7 +173,6 @@ function AnimatedHeroSection({ initialProducts = [] }) {
             </div>
           </div>
         </div>
-        <FeaturedCategories />
       </section>
     </LazyMotion>
   );

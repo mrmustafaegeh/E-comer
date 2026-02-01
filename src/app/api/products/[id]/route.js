@@ -2,9 +2,9 @@ import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 
-export async function GET(request, { params }) {
+export async function getProductByIdData(id) {
   try {
-    const { id } = await params;
+    if (!id || id === 'undefined' || id === '[id]') return null;
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
@@ -13,12 +13,9 @@ export async function GET(request, { params }) {
       .collection("products")
       .findOne({ _id: new ObjectId(id) });
 
-    if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    }
+    if (!product) return null;
 
-    // Transform for consistency
-    const transformedProduct = {
+    return {
       ...product,
       _id: product._id.toString(),
       id: product._id.toString(),
@@ -26,8 +23,22 @@ export async function GET(request, { params }) {
       name: product.name || product.title,
       offerPrice: product.salePrice || product.offerPrice || null,
     };
+  } catch (err) {
+    console.error("getProductByIdData error:", err);
+    return null;
+  }
+}
 
-    const response = NextResponse.json(transformedProduct);
+export async function GET(request, { params }) {
+  try {
+    const { id } = await params;
+    const product = await getProductByIdData(id);
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    const response = NextResponse.json(product);
 
     // ✅ Product details cache for 5 minutes
     response.headers.set(

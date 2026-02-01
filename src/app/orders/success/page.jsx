@@ -2,75 +2,58 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, ArrowRight, ShoppingBag } from "lucide-react";
+import { CheckCircle2, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import confetti from "canvas-confetti";
+import { motion } from "framer-motion";
 
 export default function OrderSuccessPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    // Fire confetti on load
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min, max) => Math.random() * (max - min) + min;
-
-    const interval = setInterval(function () {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-      });
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-      });
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-3xl shadow-xl p-8 text-center border border-gray-100">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-10 h-10 text-green-600" />
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Decorative Border Layer */}
+      <div className="fixed inset-0 border-[24px] border-gray-50 pointer-events-none z-50 hidden lg:block" />
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-[500px] w-full text-center relative z-10"
+      >
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-900 rounded-[2.5rem] text-white shadow-2xl shadow-gray-200 mb-10 border-4 border-white">
+            <ShieldCheck size={44} strokeWidth={2.5} />
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Order Placed Successfully!
+        <h1 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter mb-6 leading-none">
+          Protocol <br /> Completed.
         </h1>
-        <p className="text-gray-500 mb-8">
-          Thank you for your purchase. We have received your order and will contact you for delivery.
+        
+        <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-12 max-w-sm mx-auto leading-relaxed">
+          Transaction successfully validated and logged. Your assets are being prepared for dispatch.
         </p>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
             href="/products"
-            className="block w-full bg-gray-900 hover:bg-black text-white py-3.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 px-8 py-5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 group"
           >
-            <ShoppingBag size={18} />
-            Continue Shopping
+            New Acquisition <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </Link>
           
           <Link
             href="/"
-            className="block w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+            className="flex items-center justify-center gap-2 px-8 py-5 bg-white border border-gray-100 text-gray-400 hover:text-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
           >
-            Return to Home
+            System Root
           </Link>
         </div>
-      </div>
+
+        <div className="mt-24 pt-8 border-t border-gray-50">
+             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-200">
+                Logistics Confirmation v2.0 // Success Code 201
+            </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

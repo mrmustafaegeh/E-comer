@@ -152,3 +152,67 @@ export async function createProduct(productData) {
 export async function getProductById(id) {
   // Placeholder
 }
+
+export async function getHeroProductsData() {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+
+    const docs = await db
+      .collection("products")
+      .find({ $or: [{ isFeatured: true }, { featured: true }] })
+      .sort({ featuredOrder: 1, createdAt: -1 })
+      .limit(5)
+      .project({
+        name: 1,
+        title: 1,
+        price: 1,
+        salePrice: 1,
+        oldPrice: 1,
+        discount: 1,
+        rating: 1,
+        image: 1,
+        thumbnail: 1,
+        emoji: 1,
+        gradient: 1,
+      })
+      .toArray();
+
+    return transformProducts(docs).map((p) => {
+      const displayPrice = p.isOnSale ? p.formattedSalePrice : p.formattedPrice;
+      const displayOldPrice = p.isOnSale ? p.formattedPrice : (p.oldPrice ? p.formattedOldPrice : null);
+      
+      return {
+        ...p,
+        price: displayPrice,
+        oldPrice: displayOldPrice,
+        offerPrice: p.salePrice || p.price,
+        imageUrl: p.thumbnail || p.image || null,
+        rating: typeof p.rating === "number" ? p.rating : 4.5,
+        emoji: p.emoji || null,
+        gradient: p.gradient || "from-blue-500 to-purple-600",
+      };
+    });
+  } catch (error) {
+    console.error("ProductService getHeroProductsData Error:", error);
+    return [];
+  }
+}
+
+export async function getFeaturedProductsData() {
+  try {
+      const client = await clientPromise;
+      const db = client.db(process.env.MONGODB_DB);
+  
+      const docs = await db.collection("products")
+          .find({ isFeatured: true })
+          .sort({ createdAt: -1 })
+          .limit(12)
+          .toArray();
+  
+      return transformProducts(docs);
+  } catch (error) {
+      console.error("ProductService getFeaturedProductsData Error:", error);
+      return [];
+  }
+}

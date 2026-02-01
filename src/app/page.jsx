@@ -1,47 +1,54 @@
 import { Suspense } from 'react';
 import HeroSlider from "../Component/slider/HeroSlider";
 import FeaturedProductsClient from "../Component/features/FeaturedProductsClient";
-import { getHeroProductsData } from "./api/hero-products/route";
-import { getFeaturedProductsData } from "./api/products/featured/route";
+import { getHeroProductsData, getFeaturedProductsData } from "@/services/productService";
+
+import CategorySection from "../Component/home/CategorySection";
+import ValueProps from "../Component/home/ValueProps";
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: "My Shop - Best Products for You",
+  title: "Premium Tech & Lifestyle | QuickCart",
   description: "Discover premium tech products and lifestyle essentials with unbeatable deals.",
   openGraph: {
-    title: "My Shop - Best Products for You", 
+    title: "Premium Tech & Lifestyle | QuickCart", 
     description: "Discover premium tech products and lifestyle essentials with unbeatable deals.",
     type: "website",
   }
 };
 
 export default async function HomePage() {
-  // Fetch data directly from the database logic (Server Component Pattern)
-  // This avoids internal API calls which can fail during build/deployment
   const [heroProducts, featuredProducts] = await Promise.all([
     getHeroProductsData(),
     getFeaturedProductsData()
   ]);
 
   return (
-    <main className="bg-gray-50 min-h-screen">
-      {/* 
-        Hero Section:
-        - Critical for LCP. 
-        - We pass 'initialProducts' to avoid client-side waterfalls.
-      */}
-      <section className="relative min-h-[600px]">
+    <main className="bg-white min-h-screen">
+      {/* 1. Hero Section */}
+      <section className="relative min-h-[500px] md:min-h-[600px]">
         <HeroSlider initialProducts={heroProducts} />
       </section>
 
-      {/* 
-        Features Section:
-        - Now fully server-rendered as well for better SEO key-phrase coverage
-      */}
-      <section className="max-w-7xl mx-auto px-4 py-16" id="features">
+      {/* 2. Trust Section (Value Props) */}
+      <ValueProps />
+
+      {/* 3. Featured Products */}
+      <section className="max-w-7xl mx-auto px-6 py-20 md:py-32" id="features">
+        <div className="mb-16">
+          <span className="text-xs font-bold tracking-[0.2em] uppercase text-gray-400 mb-4 block">
+            The Collection
+          </span>
+          <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+            Featured Designs.
+          </h2>
+        </div>
         <FeaturedProductsClient initialProducts={featuredProducts} />
       </section>
+
+      {/* 4. Editorial Categories Section */}
+      <CategorySection />
     </main>
   );
 }

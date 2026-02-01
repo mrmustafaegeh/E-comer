@@ -14,6 +14,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import LoadingSpinner from "../../Component/ui/LoadingSpinner";
 
 export default function OrdersPage() {
@@ -164,14 +165,16 @@ export default function OrdersPage() {
                     {order.products?.map((item, idx) => (
                       <div key={idx} className="flex gap-4 items-center">
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                          <img
+                          <Image
                             src={
                               item.image ||
                               item.imgSrc ||
                               "/images/placeholder.png"
                             }
                             alt={item.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
+                            sizes="64px"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
