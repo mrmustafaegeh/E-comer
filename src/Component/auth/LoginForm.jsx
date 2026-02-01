@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema } from "../../lib/validation";
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, Lock, Loader2, ArrowRight, AlertCircle, ShoppingBag } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowRight, AlertCircle, ShoppingBag, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginForm() {
@@ -54,128 +54,108 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#0A0A0B]">
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full" />
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-white">
+      {/* Decorative Border Layer */}
+      <div className="fixed inset-0 border-[24px] border-gray-50 pointer-events-none z-50 hidden lg:block" />
       
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-[480px] z-10"
       >
-        <div className="relative z-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="p-8 pb-4">
-            <div className="flex justify-center mb-6">
-              <div className="p-3 bg-gradient-to-tr from-purple-500 to-blue-500 rounded-2xl shadow-lg ring-4 ring-white/5">
-                <ShoppingBag className="w-8 h-8 text-white" />
-              </div>
+        <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-900 rounded-3xl text-white shadow-2xl shadow-gray-200 mb-8">
+                <ShieldCheck size={32} strokeWidth={2.5} />
             </div>
-            
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome Back</h1>
-              <p className="text-gray-400">Sign in to manage your premium store</p>
-            </div>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tighter mb-4">Access Console.</h1>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Identify yourself to proceed</p>
+        </div>
 
+        <div className="bg-white p-2 md:p-10 rounded-[2.5rem] border border-gray-50 md:shadow-2xl md:shadow-gray-100">
             <AnimatePresence mode="wait">
               {loginError && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl flex items-center gap-3 text-sm"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="mb-8 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-xs font-bold uppercase tracking-widest border border-red-100"
                 >
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <AlertCircle size={18} />
                   <p>{loginError}</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Email address</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Authentication ID (Email)</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-purple-500 text-gray-500">
-                    <Mail className="w-5 h-5" />
-                  </div>
                   <input
                     {...register("email")}
                     type="email"
-                    placeholder="name@company.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none transition-all focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:bg-white/10"
+                    placeholder="name@console.v2"
+                    className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight"
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-red-400 text-xs mt-1 ml-1">{errors.email.message}</p>
+                  <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest mt-2 ml-1">{errors.email.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-sm font-medium text-gray-300">Password</label>
-                  <Link href="/auth/forgot-password" size="sm" className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
-                    Forgot Password?
-                  </Link>
+                <div className="flex items-center justify-between ml-1 mb-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Access Key (Password)</label>
                 </div>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-purple-500 text-gray-500">
-                    <Lock className="w-5 h-5" />
-                  </div>
+                <div className="relative group focus-within:z-10">
                   <input
                     {...register("password")}
                     type="password"
                     placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none transition-all focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:bg-white/10"
+                    className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-gray-900 placeholder:text-gray-300 outline-none transition-all focus:bg-white focus:ring-4 focus:ring-gray-100 font-bold tracking-tight"
                   />
                 </div>
                 {errors.password && (
-                  <p className="text-red-400 text-xs mt-1 ml-1">{errors.password.message}</p>
+                  <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest mt-2 ml-1">{errors.password.message}</p>
                 )}
               </div>
 
-              <div className="flex items-center space-x-2 ml-1">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="rounded-md bg-white/5 border-white/10 text-purple-500 focus:ring-purple-500/50 transition-colors"
-                />
-                <label htmlFor="remember" className="text-sm text-gray-400 cursor-pointer">Remember me for 30 days</label>
+              <div className="pt-2">
+                <button
+                    disabled={isSubmitting}
+                    type="submit"
+                    className="w-full bg-gray-900 hover:bg-black text-white py-5 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-gray-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 group"
+                >
+                    {isSubmitting ? (
+                    <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm font-black uppercase tracking-widest">Verifying...</span>
+                    </>
+                    ) : (
+                    <>
+                        <span className="text-sm font-black uppercase tracking-widest">Execute Login</span>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                    )}
+                </button>
               </div>
-
-              <button
-                disabled={isSubmitting}
-                type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
             </form>
-          </div>
-          
-          <div className="p-8 pt-4 text-center border-t border-white/5 bg-black/20">
-            <p className="text-gray-400 text-sm">
-              Don't have an account?{" "}
-              <Link href="/auth/register" className="text-white font-semibold hover:text-purple-400 transition-colors">
-                Create an account
-              </Link>
-            </p>
-          </div>
         </div>
 
-        {/* Footer info */}
-        <p className="mt-8 text-center text-gray-500 text-xs uppercase tracking-widest font-medium">
-          Secure Cloud Authentication
+        <div className="mt-12 text-center">
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
+                No credentials found?
+            </p>
+            <Link 
+                href="/auth/register" 
+                className="inline-flex items-center text-gray-900 font-black text-sm tracking-tight hover:underline decoration-2 underline-offset-8"
+            >
+                Create Global Account <ArrowRight size={16} className="ml-2" />
+            </Link>
+        </div>
+
+        <p className="mt-20 text-center text-[10px] font-black uppercase tracking-[0.3em] text-gray-200">
+            Secure Asset Retrieval Protocol v2.0
         </p>
       </motion.div>
     </div>

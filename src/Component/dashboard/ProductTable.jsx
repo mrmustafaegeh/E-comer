@@ -1,11 +1,10 @@
-// src/components/dashboard/ProductTable.jsx
 "use client";
 
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
 import Link from "next/link";
-import { FiEdit2, FiTrash2, FiEye } from "react-icons/fi";
+import { Edit3, Trash2, Eye, MoreHorizontal, Package } from "lucide-react";
 import { deleteAdminProduct } from "../../store/adminProductSlice";
 
 export default function ProductTable({ products }) {
@@ -13,17 +12,15 @@ export default function ProductTable({ products }) {
   const [deletingId, setDeletingId] = useState(null);
 
   const handleDelete = async (productId) => {
-    if (!confirm("Are you sure you want to delete this product?")) {
+    if (!confirm("Execute deletion protocol for this asset?")) {
       return;
     }
 
     setDeletingId(productId);
     try {
       await dispatch(deleteAdminProduct(productId)).unwrap();
-      // Product will be removed from list automatically via Redux
     } catch (error) {
-      console.error("Failed to delete product:", error);
-      alert("Failed to delete product. Please try again.");
+      console.error("Deletion failure:", error);
     } finally {
       setDeletingId(null);
     }
@@ -38,36 +35,23 @@ export default function ProductTable({ products }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Product
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Category
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Price
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Stock
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="border-b border-gray-100">
+            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Product Asset</th>
+            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Category</th>
+            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Valuation</th>
+            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Availability</th>
+            <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Actions</th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-50">
           {products.map((product) => (
-            <tr key={product._id || product.id} className="hover:bg-gray-50">
+            <tr key={product._id || product.id} className="group hover:bg-gray-50/50 transition-colors">
               {/* Product Info */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 h-12 w-12 relative bg-gray-100 rounded-lg overflow-hidden">
+              <td className="px-6 py-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-12 h-16 bg-gray-100 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
                     {product.image || product.thumbnail ? (
                       <Image
                         src={product.image || product.thumbnail}
@@ -77,95 +61,77 @@ export default function ProductTable({ products }) {
                         sizes="48px"
                       />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center text-gray-400">
-                        📦
+                      <div className="h-full w-full flex items-center justify-center text-gray-300">
+                        <Package size={20} />
                       </div>
                     )}
                   </div>
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-gray-900 tracking-tight truncate max-w-[200px] group-hover:text-blue-600 transition-colors">
                       {product.name}
-                    </div>
-                    {product.description && (
-                      <div className="text-sm text-gray-500 truncate max-w-xs">
-                        {product.description.substring(0, 50)}...
-                      </div>
-                    )}
+                    </p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                      ID: {(product._id || product.id).substring(0, 8)}
+                    </p>
                   </div>
                 </div>
               </td>
 
               {/* Category */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                  {product.category || "Uncategorized"}
+              <td className="px-6 py-6">
+                <span className="inline-flex text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white border border-gray-100 text-gray-900 rounded-full shadow-sm">
+                  {product.category || "General"}
                 </span>
               </td>
 
               {/* Price */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">
+              <td className="px-6 py-6">
+                <p className="text-sm font-black text-gray-900 tracking-tighter">
                   {formatPrice(product.price)}
-                </div>
+                </p>
                 {product.salePrice && (
-                  <div className="text-xs text-green-600">
-                    Sale: {formatPrice(product.salePrice)}
-                  </div>
+                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-0.5">
+                    Sale active
+                  </p>
                 )}
               </td>
 
-              {/* Stock */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">
-                  {product.stock || 0}
+              {/* Availability */}
+              <td className="px-6 py-6">
+                <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]"}`} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${product.stock > 0 ? "text-gray-900" : "text-red-500"}`}>
+                        {product.stock > 0 ? `${product.stock} Units` : "Depleted"}
+                    </span>
                 </div>
-              </td>
-
-              {/* Status */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                {product.stock > 0 ? (
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    In Stock
-                  </span>
-                ) : (
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                    Out of Stock
-                  </span>
-                )}
               </td>
 
               {/* Actions */}
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex items-center justify-end gap-2">
-                  {/* View */}
+              <td className="px-6 py-6 text-right">
+                <div className="flex items-center justify-end gap-1 opacity-10 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <Link
-                    href={`/product/${product._id || product.id}`}
-                    className="text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="View Product"
+                    href={`/products/${product._id || product.id}`}
+                    className="p-3 text-gray-400 hover:text-gray-900 hover:bg-white rounded-xl transition-all"
                   >
-                    <FiEye size={18} />
+                    <Eye size={18} />
                   </Link>
 
-                  {/* Edit */}
                   <Link
                     href={`/admin/admin-products/${product._id || product.id}`}
-                    className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit Product"
+                    className="p-3 text-gray-400 hover:text-gray-900 hover:bg-white rounded-xl transition-all"
                   >
-                    <FiEdit2 size={18} />
+                    <Edit3 size={18} />
                   </Link>
 
-                  {/* Delete */}
                   <button
                     onClick={() => handleDelete(product._id || product.id)}
                     disabled={deletingId === (product._id || product.id)}
-                    className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                    title="Delete Product"
+                    className="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50"
                   >
                     {deletingId === (product._id || product.id) ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent" />
+                      <Loader2 size={18} className="animate-spin text-gray-900" />
                     ) : (
-                      <FiTrash2 size={18} />
+                      <Trash2 size={18} />
                     )}
                   </button>
                 </div>
@@ -176,4 +142,8 @@ export default function ProductTable({ products }) {
       </table>
     </div>
   );
+}
+
+function Loader2({ size, className }) {
+    return <svg className={`animate-spin ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
 }
