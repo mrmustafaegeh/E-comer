@@ -24,9 +24,10 @@ export async function POST(request) {
     }
 
     // 2) Rate limit (IP based)
+    // 2) Rate limit (IP based)
     const ip = getClientIp(request);
-    const allowed = await rateLimit(ip, 5, 60_000); // 5 per minute
-    if (!allowed) return rateLimitResponse();
+    const { success } = await rateLimit(ip, 5, "15 m"); // 5 per 15 minutes
+    if (!success) return rateLimitResponse();
 
     // 3) Parse JSON
     let body;

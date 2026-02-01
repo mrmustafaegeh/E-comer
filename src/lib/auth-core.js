@@ -2,17 +2,16 @@ import "server-only";
 
 import bcrypt from "bcryptjs";
 import clientPromise from "./mongodb";
-
-// Use ONE database name everywhere (same locally + Vercel)
-const DB_NAME = process.env.MONGODB_DB || "ecommerce";
+import { validateEnv } from "./env-validator";
 
 // ------------------------
 // Helpers
 // ------------------------
 
 async function getUsersCollection() {
+  const env = validateEnv(); // Ensure env is valid before connecting
   const client = await clientPromise;
-  const db = client.db(DB_NAME);
+  const db = client.db(env.MONGODB_DB);
   return db.collection("users");
 }
 

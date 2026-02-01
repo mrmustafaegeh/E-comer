@@ -27,7 +27,8 @@ export async function POST(request) {
 
     const headerList = await headers();
     const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
-    if (!(await rateLimit(ip, 3, 60000))) return rateLimitResponse();
+    const { success } = await rateLimit(ip, 3, "1 m");
+    if (!success) return rateLimitResponse();
 
     const user = await getCurrentUser();
     const body = await request.json();

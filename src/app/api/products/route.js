@@ -1,4 +1,4 @@
-import { validateRequest, forbiddenResponse } from "@/lib/security";
+import { validateRequest, forbiddenResponse, rateLimit, rateLimitResponse, getClientIp } from "@/lib/security";
 import { verifySession } from "@/lib/session";
 import { ProductSchema, formatZodErrors } from "@/lib/validation";
 import { NextResponse } from "next/server";
@@ -8,6 +8,11 @@ export async function GET(request) {
   const start = Date.now();
 
   try {
+    // Rate Limit: 100 req / minute
+    const ip = getClientIp(request);
+    const { success } = await rateLimit(ip, 100, "1 m");
+    if (!success) return rateLimitResponse();
+
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB); 
     const collection = db.collection("products");
