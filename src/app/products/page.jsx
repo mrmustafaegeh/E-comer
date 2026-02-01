@@ -1,30 +1,40 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import ProductsClient from "./ProductsClient";
 import { getProducts } from "../../services/productService";
+import JsonLd, { generateBreadcrumbJsonLd } from "../../Component/seo/JsonLd";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 60; // Revalidate every minute
 
 export async function generateMetadata({ searchParams }) {
-  const { search, category } = await searchParams;
+  const resolvedParams = await searchParams;
+  const { search, category } = resolvedParams;
 
-  let title = "Products | E-Commerce Store";
-  let description = "Browse our extensive collection of high-quality products.";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickcart.com";
+  const canonical = `${baseUrl}/products${category ? `?category=${category}` : ""}`;
+
+  let title = "The Collection | Premium Tech Assets";
+  let description = "Browse our curated archive of premium digital and physical assets for the modern world.";
 
   if (category) {
-    const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
-    title = `${formattedCategory} | E-Commerce Store`;
-    description = `Shop the best ${category} products at competitive prices.`;
+    const term = category.charAt(0).toUpperCase() + category.slice(1);
+    title = `${term} Collection | Premium Tech Assets`;
+    description = `Discover our high-performance ${category} products. Quality guaranteed in every asset.`;
   }
 
   if (search) {
-    title = `Search results for "${search}" | E-Commerce Store`;
-    description = `Find exactly what you're looking for with our search results for "${search}".`;
+    title = `Searching for "${search}" | Assets Archive`;
   }
 
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
+      url: canonical,
+      siteName: "QuickCart Identity Console",
       type: "website",
     },
     twitter: {
@@ -37,32 +47,36 @@ export async function generateMetadata({ searchParams }) {
 
 export default async function ProductsPage({ searchParams }) {
   const queryClient = new QueryClient();
-
   const resolvedParams = await searchParams;
-  const page = Number(resolvedParams.page) || 1;
-  const limit = 12; // Must match hook default
-  const search = resolvedParams.search || "";
-  const category = resolvedParams.category || "";
-  const minPrice = resolvedParams.minPrice || "";
-  const maxPrice = resolvedParams.maxPrice || "";
-
+  
   const filters = {
-    page,
-    limit,
-    search,
-    category,
-    minPrice,
-    maxPrice,
+    page: Math.max(1, parseInt(resolvedParams.page) || 1),
+    limit: 12,
+    search: resolvedParams.search || "",
+    category: resolvedParams.category || "",
+    minPrice: resolvedParams.minPrice || "",
+    maxPrice: resolvedParams.maxPrice || "",
+    sort: resolvedParams.sort || "newest"
   };
 
-  // Prefetch using the service directly (Server-Side)
+  // Prefetch for SSR Hydration
   await queryClient.prefetchQuery({
     queryKey: ["products", filters],
     queryFn: () => getProducts(filters),
   });
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://quickcart.com";
+  const breadcrumbs = [
+    { name: "Home", item: baseUrl },
+    { name: "Collection", item: `${baseUrl}/products` }
+  ];
+  if (filters.category) {
+    breadcrumbs.push({ name: filters.category, item: `${baseUrl}/products?category=${filters.category}` });
+  }
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      <JsonLd data={generateBreadcrumbJsonLd(breadcrumbs)} />
       <ProductsClient />
     </HydrationBoundary>
   );

@@ -1,37 +1,34 @@
-# Testing Strategy
+# Testing Guide
 
-This project uses **Vitest** for unit/integration testing and **Playwright** for E2E testing.
+## Running Tests
 
-## Unit Tests
-Located in `__tests__/unit`.
-Focus on business logic, utilities, and services.
-
-### Running Unit Tests
+### Unit Tests (Vitest)
 ```bash
-npm test
-# or
-npx vitest
+npm run test
 ```
+Tests individual functions, specifically in `transformers.js`, `formatters.js`, and `validators`.
 
-### Key Test Files
-- `lib/transformers.test.js`: Verifies data transformation logic.
-- `lib/formatters.test.js`: Verifies currency/date formatting.
-- `services/productService.test.js`: Verifies product business logic and DB query construction.
+### Integration Tests
+Tests the interaction between Services and the Database. Requires a running MongoDB or `mongodb-memory-server`.
 
-## E2E Tests
-Located in `__tests__/e2e`.
-Focus on critical user flows (Products, Checkout).
-
-### Running E2E Tests
+### E2E Tests (Playwright)
 ```bash
 npm run test:e2e
-# or
-npx playwright test
+```
+Tests critical user flows like:
+- Authentication (Login/Register)
+- Search & Filtering
+- Cart and Checkout flow
+
+## Writing Tests
+- Place unit tests in `__tests__` directories next to the code.
+- Use mocks for `clientPromise` to avoid connecting to the real DB during unit tests.
+
+## Coverage Reports
+Generate coverage reports to ensure >80% coverage:
+```bash
+npm run test:coverage
 ```
 
-### Key Test Files
-- `products.spec.js`: Verifies products page loading and filtering.
-- `auth.spec.js`: Verifies login/register flows.
-
-## Continuous Integration
-Tests are run automatically on PRs via GitHub Actions (`.github/workflows/test.yml`).
+## CI/CD Integration
+Tests are automatically run on GitHub Actions for every Pull Request to `main`. Merging is blocked if tests fail.

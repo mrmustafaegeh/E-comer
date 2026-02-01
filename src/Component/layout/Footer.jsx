@@ -36,7 +36,7 @@ const Footer = () => {
   return (
     <footer className="mt-auto bg-gray-50 border-t border-gray-100 text-gray-900">
       {/* Top Decoration Line */}
-      <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+      <div className="h-1 w-full bg-black " />
 
       <div className="container mx-auto px-4 pt-16 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 mb-16">

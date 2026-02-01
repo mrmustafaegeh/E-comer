@@ -5,33 +5,34 @@ export function useProducts(filters = {}) {
   const {
     page = 1,
     limit = 12,
-    search,
-    category,
-    minPrice,
-    maxPrice,
+    search = "",
+    category = "",
+    minPrice = "",
+    maxPrice = "",
+    sort = "newest"
   } = filters;
 
   return useQuery({
     queryKey: [
       "products",
-      { page, limit, search, category, minPrice, maxPrice },
+      { page, limit, search, category, minPrice, maxPrice, sort },
     ],
     queryFn: async () => {
       const params = {
-        page: page.toString(),
-        limit: limit.toString(),
+        page: String(page),
+        limit: String(limit),
+        sort
       };
 
       if (search) params.search = search;
       if (category) params.category = category;
-      if (minPrice) params.minPrice = minPrice;
-      if (maxPrice) params.maxPrice = maxPrice;
+      if (minPrice) params.minPrice = String(minPrice);
+      if (maxPrice) params.maxPrice = String(maxPrice);
 
       return await get("products", params);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    keepPreviousData: true, // Keep old data while fetching new
+    staleTime: 60 * 1000, 
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -39,8 +40,7 @@ export function useFeaturedProducts() {
   return useQuery({
     queryKey: ["products", "featured"],
     queryFn: () => get("products/featured"),
-    staleTime: 10 * 60 * 1000, // 10 minutes - featured rarely changes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -48,8 +48,7 @@ export function useHeroProducts() {
   return useQuery({
     queryKey: ["products", "hero"],
     queryFn: () => get("hero-products"),
-    staleTime: 10 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -66,7 +65,6 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: () => get("category"),
-    staleTime: 30 * 60 * 1000, // Categories rarely change
-    cacheTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 30 * 60 * 1000,
   });
 }

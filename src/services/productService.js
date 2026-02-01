@@ -1,218 +1,200 @@
 import clientPromise from "@/lib/mongodb";
-import { transformProducts } from "@/lib/transformers";
+import { transformProducts, transformProduct } from "@/lib/transformers";
+import { ObjectId } from "mongodb";
 
+/**
+ * Get products with filtering and pagination
+ */
 export async function getProducts(params = {}) {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     const collection = db.collection("products");
 
-    const search = (params.search || "").trim();
-    const category = (params.category || "").trim();
-
-    const page = Math.max(1, Number(params.page || 1));
-    const limit = Math.min(48, Math.max(1, Number(params.limit || 24)));
-
-    const minPriceRaw = params.minPrice;
-    const maxPriceRaw = params.maxPrice;
-
-    const minPrice =
-      minPriceRaw !== undefined && minPriceRaw !== ""
-        ? Number(minPriceRaw)
-        : null;
-    const maxPrice =
-      maxPriceRaw !== undefined && maxPriceRaw !== ""
-        ? Number(maxPriceRaw)
-        : null;
-
-    // Build filters
-    const filters = {};
-
-    // Category filter
-    if (category && category !== "all") {
-      filters.category = category.toLowerCase();
-    }
-
-    // Price filter
-    if (Number.isFinite(minPrice) || Number.isFinite(maxPrice)) {
-      const priceConditions = [];
-      const priceFilter = {};
-      if (Number.isFinite(minPrice)) priceFilter.$gte = minPrice;
-      if (Number.isFinite(maxPrice)) priceFilter.$lte = maxPrice;
-
-      priceConditions.push({ price: priceFilter });
-      priceConditions.push({
-        salePrice: {
-          ...priceFilter,
-          $ne: null,
-        },
-      });
-
-      filters.$or = priceConditions;
-    }
-
-    // Search filter
-    if (search) {
-      filters.$text = { $search: search };
-    }
-
+    const page = Math.max(1, parseInt(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(params.limit) || 12));
     const skip = (page - 1) * limit;
 
-    // Projection
-    const projection = {
-      name: 1,
-      title: 1,
-      price: 1,
-      salePrice: 1,
-      oldPrice: 1,
-      discount: 1,
-      image: 1,
-      thumbnail: 1,
-      emoji: 1,
-      category: 1,
-      rating: 1,
-      numReviews: 1,
-      featured: 1,
-      isFeatured: 1,
-      stock: 1,
-      createdAt: 1,
-      slug: 1,
-    };
+    const filters = {};
 
-    const [products, total] = await Promise.all([
-      collection
-        .find(filters, { projection })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
-      collection.countDocuments(filters),
+    if (params.category && params.category !== "all") {
+      filters.category = params.category.toLowerCase();
+    }
+
+    if (params.search) {
+      filters.$or = [
+        { name: { $regex: params.search, $options: "i" } },
+        { title: { $regex: params.search, $options: "i" } },
+        { description: { $regex: params.search, $options: "i" } },
+        { category: { $regex: params.search, $options: "i" } }
+      ];
+    }
+
+    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+      filters.$and = [];
+      const priceFilter = {};
+      if (params.minPrice !== undefined) priceFilter.$gte = parseFloat(params.minPrice);
+      if (params.maxPrice !== undefined) priceFilter.$lte = parseFloat(params.maxPrice);
+      
+      // Filter by either price OR salePrice
+      filters.$and.push({
+        $or: [
+          { price: priceFilter },
+          { salePrice: priceFilter }
+        ]
+      });
+    }
+
+    const sort = {};
+    switch (params.sort) {
+      case "price-low": sort.price = 1; break;
+      case "price-high": sort.price = -1; break;
+      case "rating": sort.rating = -1; break;
+      case "newest":
+      default: sort.createdAt = -1; break;
+    }
+
+    const [docs, total] = await Promise.all([
+      collection.find(filters).sort(sort).skip(skip).limit(limit).toArray(),
+      collection.countDocuments(filters)
     ]);
 
-    // Transform products using centralized utility
-    const transformedProducts = transformProducts(products);
-
     return {
-      products: transformedProducts,
+      products: transformProducts(docs),
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit)
     };
   } catch (error) {
-    console.error("ProductService getProducts Error:", error);
-    throw new Error("Failed to fetch products");
+    console.error("ProductService.getProducts Error:", error);
+    throw error;
   }
 }
 
-export async function createProduct(productData) {
+/**
+ * Get product by ID or Slug
+ */
+export async function getProductById(idOrSlug) {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
     const collection = db.collection("products");
 
-    // Standardize category
-    const finalData = {
-      ...productData,
-      category: productData.category.toLowerCase(),
-    };
+    let query = { slug: idOrSlug };
+    if (ObjectId.isValid(idOrSlug)) {
+      query = { $or: [{ _id: new ObjectId(idOrSlug) }, { slug: idOrSlug }] };
+    }
 
-    // Generate slug
-    const slug = (productData.slug || productData.name || productData.title)
+    const p = await collection.findOne(query);
+    return transformProduct(p);
+  } catch (error) {
+    console.error("ProductService.getProductById Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Create a new product
+ */
+export async function createProduct(data) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const collection = db.collection("products");
+
+    const slug = data.slug || (data.name || data.title)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-    // Check existing
-    const existing = await collection.findOne({ slug });
-    if (existing) {
-      throw new Error("A product with this slug already exists");
-    }
-
     const doc = {
-      ...finalData,
+      ...data,
       slug,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
 
     const result = await collection.insertOne(doc);
-
-    return {
-      ...doc,
-      _id: result.insertedId.toString(),
-      id: result.insertedId.toString(),
-    };
+    return { ...doc, id: result.insertedId.toString() };
   } catch (error) {
-    console.error("ProductService createProduct Error:", error);
+    console.error("ProductService.createProduct Error:", error);
     throw error;
   }
 }
 
-export async function getProductById(id) {
-  // Placeholder
+/**
+ * Update a product
+ */
+export async function updateProduct(id, data) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const collection = db.collection("products");
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { ...data, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    return transformProduct(result.value);
+  } catch (error) {
+    console.error("ProductService.updateProduct Error:", error);
+    throw error;
+  }
 }
 
+/**
+ * Delete a product
+ */
+export async function deleteProduct(id) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount > 0;
+  } catch (error) {
+    console.error("ProductService.deleteProduct Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Hero & Featured Data
+ */
 export async function getHeroProductsData() {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-
-    const docs = await db
-      .collection("products")
+    const docs = await db.collection("products")
       .find({ $or: [{ isFeatured: true }, { featured: true }] })
       .sort({ featuredOrder: 1, createdAt: -1 })
       .limit(5)
-      .project({
-        name: 1,
-        title: 1,
-        price: 1,
-        salePrice: 1,
-        oldPrice: 1,
-        discount: 1,
-        rating: 1,
-        image: 1,
-        thumbnail: 1,
-        emoji: 1,
-        gradient: 1,
-      })
       .toArray();
 
-    return transformProducts(docs).map((p) => {
-      const displayPrice = p.isOnSale ? p.formattedSalePrice : p.formattedPrice;
-      const displayOldPrice = p.isOnSale ? p.formattedPrice : (p.oldPrice ? p.formattedOldPrice : null);
-      
-      return {
-        ...p,
-        price: displayPrice,
-        oldPrice: displayOldPrice,
-        offerPrice: p.salePrice || p.price,
-        imageUrl: p.thumbnail || p.image || null,
-        rating: typeof p.rating === "number" ? p.rating : 4.5,
-        emoji: p.emoji || null,
-        gradient: p.gradient || "from-blue-500 to-purple-600",
-      };
-    });
+    return transformProducts(docs).map(p => ({
+      ...p,
+      imageUrl: p.thumbnail || p.image || null,
+      offerPrice: p.salePrice || p.price,
+      gradient: p.gradient || "from-blue-500 to-purple-600"
+    }));
   } catch (error) {
-    console.error("ProductService getHeroProductsData Error:", error);
     return [];
   }
 }
 
 export async function getFeaturedProductsData() {
   try {
-      const client = await clientPromise;
-      const db = client.db(process.env.MONGODB_DB);
-  
-      const docs = await db.collection("products")
-          .find({ isFeatured: true })
-          .sort({ createdAt: -1 })
-          .limit(12)
-          .toArray();
-  
-      return transformProducts(docs);
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const docs = await db.collection("products")
+      .find({ isFeatured: true })
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .toArray();
+    return transformProducts(docs);
   } catch (error) {
-      console.error("ProductService getFeaturedProductsData Error:", error);
-      return [];
+    return [];
   }
 }

@@ -1,132 +1,96 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic";
 import LoadingSpinner from "../../Component/ui/LoadingSpinner";
 import EmptyState from "../../Component/ui/EmptyState";
 import { useProducts } from "../../hooks/useProducts";
-
-const ProductList = dynamic(() => import("../../Component/products/ProductsList"), { ssr: false });
-const ProductFilters = dynamic(() => import("../../Component/products/ProductFilters"), { 
-  ssr: false,
-  loading: () => <div className="h-40 bg-gray-100 animate-pulse rounded-xl mb-6" />
-});
-const ProductPagination = dynamic(() => import("../../Component/products/ProductPagination"), { ssr: false });
+import ProductList from "../../Component/products/ProductsList";
+import ProductFilters from "../../Component/products/ProductFilters";
+import ProductPagination from "../../Component/products/ProductPagination";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProductsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Parse current params from URL
-  const currentPage = Number(searchParams.get("page")) || 1;
-  const currentSearch = searchParams.get("search") || "";
-  const currentCategory = searchParams.get("category") || "";
-  const currentMinPrice = searchParams.get("minPrice") || "";
-  const currentMaxPrice = searchParams.get("maxPrice") || "";
+  // URL States (Primary Source of Truth)
+  const page = Math.max(1, parseInt(searchParams.get("page")) || 1);
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
+  const minPrice = searchParams.get("minPrice") || "";
+  const maxPrice = searchParams.get("maxPrice") || "";
+  const sort = searchParams.get("sort") || "newest";
+
   const limit = 12;
 
-  // Initial local state mimics the URL state
+  // Local Filter State (For the UI interaction before clicking "Filter")
   const [localFilters, setLocalFilters] = useState({
-    search: currentSearch,
-    category: currentCategory,
-    minPrice: currentMinPrice,
-    maxPrice: currentMaxPrice,
+    search,
+    category,
+    minPrice,
+    maxPrice,
+    sort
   });
 
-  // Sync local filters if URL changes externally
+  // Sync local state when URL changes externally
   useEffect(() => {
-    setLocalFilters({
-      search: currentSearch,
-      category: currentCategory,
-      minPrice: currentMinPrice,
-      maxPrice: currentMaxPrice,
-    });
-  }, [currentSearch, currentCategory, currentMinPrice, currentMaxPrice]);
+    setLocalFilters({ search, category, minPrice, maxPrice, sort });
+  }, [search, category, minPrice, maxPrice, sort]);
 
-  // Use React Query
-  const { data, isLoading, error, isFetching } = useProducts({
-    page: currentPage,
+  // Data Fetching (Uses Hydration Boundary if data pre-fetched on server)
+  const { data, isLoading, isPlaceholderData, error } = useProducts({
+    page,
     limit,
-    search: currentSearch,
-    category: currentCategory,
-    minPrice: currentMinPrice,
-    maxPrice: currentMaxPrice,
+    search,
+    category,
+    minPrice,
+    maxPrice,
+    sort
   });
 
-  const products = data?.products || [];
-  const total = data?.total || 0;
-  const totalPages = Math.ceil(total / limit);
-
-  // Update URL function
-  const updateUrl = (newParams) => {
+  const updateUrl = useCallback((newParams) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    if (newParams.page) params.set("page", newParams.page);
-    else params.set("page", "1"); 
-
-    if (newParams.search !== undefined) {
-      if (newParams.search) params.set("search", newParams.search);
-      else params.delete("search");
+    // Reset to page 1 on filter change unless specifically changing page
+    if (newParams.page) {
+        params.set("page", String(newParams.page));
+    } else {
+        params.set("page", "1");
     }
 
-    if (newParams.category !== undefined) {
-      if (newParams.category) params.set("category", newParams.category);
-      else params.delete("category");
-    }
-    
-    if (newParams.minPrice !== undefined) {
-      if (newParams.minPrice) params.set("minPrice", newParams.minPrice);
-      else params.delete("minPrice");
-    }
-
-    if (newParams.maxPrice !== undefined) {
-      if (newParams.maxPrice) params.set("maxPrice", newParams.maxPrice);
-      else params.delete("maxPrice");
-    }
+    Object.keys(newParams).forEach(key => {
+        if (key === 'page') return;
+        if (newParams[key]) {
+            params.set(key, String(newParams[key]));
+        } else {
+            params.delete(key);
+        }
+    });
 
     router.push(`?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
+
+  const handleApplyFilters = () => {
+    updateUrl(localFilters);
   };
 
-  const applyFilters = () => {
-    updateUrl({
-      search: localFilters.search,
-      category: localFilters.category,
-      minPrice: localFilters.minPrice,
-      maxPrice: localFilters.maxPrice,
-      page: 1
-    });
+  const handleClearFilters = () => {
+    const cleared = { search: "", category: "", minPrice: "", maxPrice: "", sort: "newest" };
+    setLocalFilters(cleared);
+    updateUrl(cleared);
   };
 
-  const clearFilters = () => {
-    const emptyFilters = {
-      search: "",
-      category: "",
-      minPrice: "",
-      maxPrice: "",
-    };
-    setLocalFilters(emptyFilters);
-    updateUrl({ ...emptyFilters, page: 1 });
-  };
+  if (error) return (
+    <div className="py-20 text-center">
+        <p className="text-red-500 font-bold uppercase tracking-widest text-xs">Error: Protocol Failure</p>
+        <p className="text-gray-400 mt-2">{error.message}</p>
+    </div>
+  );
 
-  const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", newPage.toString());
-    router.push(`?${params.toString()}`, { scroll: true });
-  };
-
-  const hasActiveFilters = currentSearch || currentCategory || currentMinPrice || currentMaxPrice;
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Error loading products</p>
-          <p className="text-sm text-gray-600">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
+  const products = data?.products || [];
+  const totalItems = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
 
   return (
     <div className="min-h-screen bg-white">
@@ -134,62 +98,85 @@ export default function ProductsClient() {
         <ProductFilters
           localFilters={localFilters}
           setLocalFilters={setLocalFilters}
-          applyFilters={applyFilters}
-          clearFilters={clearFilters}
+          applyFilters={handleApplyFilters}
+          clearFilters={handleClearFilters}
         />
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 pb-24">
-        {isFetching && !isLoading && (
-          <div className="text-center mb-4">
-            <span className="text-xs text-gray-500 uppercase tracking-widest">Updating...</span>
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <LoadingSpinner />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="text-6xl mb-6">🔍</div>
-            <EmptyState
-              message={
-                hasActiveFilters
-                  ? "We couldn't find any matches. Try different filters."
-                  : "No products available yet."
-              }
-            />
-            {hasActiveFilters && (
-              <div className="flex justify-center mt-6">
-                <button
-                  onClick={clearFilters}
-                  className="text-black underline underline-offset-4 hover:text-gray-600 font-medium text-sm"
+        {/* Results Info */}
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Displaying Archive: {products.length} of {totalItems}
+                </span>
+                {isPlaceholderData && (
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest animate-pulse">
+                        Sychronizing...
+                    </span>
+                )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sort:</span>
+                <select 
+                    value={localFilters.sort} 
+                    onChange={(e) => {
+                        const newSort = e.target.value;
+                        setLocalFilters(p => ({ ...p, sort: newSort }));
+                        updateUrl({ ...localFilters, sort: newSort });
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest bg-transparent border-none focus:ring-0 cursor-pointer pointer-events-auto"
                 >
-                  Clear all filters
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="mb-8 text-xs text-gray-400 uppercase tracking-widest text-right">
-              {products.length} Items
+                    <option value="newest">Latest Assets</option>
+                    <option value="price-low">Value: Low to High</option>
+                    <option value="price-high">Value: High to Low</option>
+                    <option value="rating">Protocol Rating</option>
+                </select>
             </div>
-            <div className="mb-16">
-              <ProductList products={products} />
-            </div>
+        </div>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center border-t border-gray-100 pt-12">
+        <section className="relative">
+            <AnimatePresence mode="wait">
+                {isLoading && !products.length ? (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="py-32 flex justify-center"
+                    >
+                        <LoadingSpinner />
+                    </motion.div>
+                ) : products.length === 0 ? (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="py-20 text-center"
+                    >
+                        <EmptyState message="No matching assets found in the identity grid." />
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={isPlaceholderData ? "opacity-30 pointer-events-none transition-opacity duration-300" : "transition-opacity duration-300"}
+                    >
+                        <ProductList products={products} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </section>
+
+        {/* Pagination Grid */}
+        {totalPages > 1 && (
+            <div className="mt-20 border-t border-gray-100 pt-10">
                 <ProductPagination
-                  page={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={(newPage) => updateUrl({ ...localFilters, page: newPage })}
                 />
-              </div>
-            )}
-          </>
+            </div>
         )}
       </div>
     </div>

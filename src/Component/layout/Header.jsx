@@ -110,15 +110,10 @@ export default function Header() {
     return () => (document.body.style.overflow = "");
   }, [isMobileMenuOpen]);
 
-  if (!mounted)
-    return (
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-md h-16 md:h-20 shadow-sm"></nav>
-    );
-
   return (
     <LazyMotion features={domAnimation}>
       <MotionNav
-        initial={{ y: -70, opacity: 0 }}
+        initial={mounted ? { y: 0, opacity: 1 } : { y: -70, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.45 }}
         className={`sticky top-0 z-50 transition-all ${
@@ -270,7 +265,7 @@ export default function Header() {
           {/* MOBILE MENU CONTENT */}
           <AnimatePresence>
             {isMobileMenuOpen && (
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -301,7 +296,7 @@ export default function Header() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
         </div>

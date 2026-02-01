@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import clientPromise from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { getUserById, updateProfile } from "@/services/authService";
+import { updateProfileSchema } from "@/validators/authValidator";
 import { validateRequest, forbiddenResponse } from "@/lib/security";
+import { transformUser } from "@/lib/transformers";
 
 export async function GET() {
   try {
@@ -12,41 +13,19 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    
-    const userId = new ObjectId(session.userId);
-
-    const user = await db.collection("users").findOne(
-      { _id: userId },
-      { projection: { password: 0 } }
-    );
+    const user = await getUserById(session.userId);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      {
-        name: user.name,
-        email: user.email,
-        image: user.image,
-        address: user.address,
-        phone: user.phone,
-        role: user.role || user.roles,
+    return NextResponse.json(transformUser(user), {
+      headers: {
+        "Cache-Control": "no-store",
       },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
-    );
+    });
   } catch (error) {
-    console.error("PROFILE GET ERROR:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -62,31 +41,19 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { name, image, address, phone } = body;
+    const validatedData = updateProfileSchema.parse(body);
 
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    const userId = new ObjectId(session.userId);
+    const updatedUser = await updateProfile(session.userId, validatedData);
 
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (image) updateData.image = image;
-    if (address) updateData.address = address;
-    if (phone) updateData.phone = phone;
-
-    updateData.updatedAt = new Date();
-
-    await db.collection("users").updateOne(
-      { _id: userId },
-      { $set: updateData }
-    );
-
-    return NextResponse.json({ success: true, message: "Profile updated" });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Protocol: Profile data synchronized.",
+      user: transformUser(updatedUser)
+    });
   } catch (error) {
-    console.error("PROFILE PUT ERROR:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { error: "Update failed", details: error.message },
+      { status: 400 }
     );
   }
 }

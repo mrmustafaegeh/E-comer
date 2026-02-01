@@ -143,14 +143,13 @@ function AnimatedHeroSection({ initialProducts = [] }) {
             <div className="relative" style={{ minHeight: "400px" }}>
               <div className="product-card product-card-3d relative">
                 {/* 
-                  AnimatePresence works on client. 
-                  On server (SSR), it should simply render the initial child.
-                  We ensure the first render matches the server data.
+                  Optimize LCP: The first product should render immediately with opacity 1.
+                  Subsequent products will use the AnimatePresence transitions.
                 */}
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait" initial={false}>
                   <m.div
                     key={currentProduct?.id}
-                    initial={{ opacity: 0 }}
+                    initial={{ opacity: products.indexOf(currentProduct) === 0 ? 1 : 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}

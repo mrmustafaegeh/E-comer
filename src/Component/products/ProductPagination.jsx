@@ -1,3 +1,4 @@
+"use client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function ProductPagination({ page, totalPages, onPageChange }) {

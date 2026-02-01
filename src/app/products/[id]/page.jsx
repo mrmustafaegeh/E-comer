@@ -1,16 +1,18 @@
-import { getProductByIdData } from "../../api/products/[id]/route";
+import { getProductById } from "../../../services/productService";
 import ProductDetailClient from "../../../Component/products/ProductDetailClient";
 import JsonLd, { generateProductJsonLd } from "../../../Component/seo/JsonLd";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const product = await getProductByIdData(id);
+  const product = await getProductById(id);
 
   if (!product) return { title: "Product Not Found" };
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quickcart.com';
+
   return {
-    title: `${product.title} - QuickCart`,
+    title: `${product.title} | Assets Archive`,
     description: product.description || `Buy ${product.title} at the best price on QuickCart.`,
     openGraph: {
       title: product.title,
@@ -22,18 +24,20 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductDetailPage({ params }) {
   const { id } = await params;
-  const product = await getProductByIdData(id);
+  const product = await getProductById(id);
 
   if (!product) {
     notFound();
   }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quickcart.com';
 
   return (
     <main className="min-h-screen bg-white">
       <JsonLd 
         data={generateProductJsonLd(
           product, 
-          process.env.NEXT_PUBLIC_APP_URL || 'https://quickcart.com'
+          baseUrl
         )} 
       />
       

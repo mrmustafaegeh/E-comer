@@ -1,8 +1,9 @@
 import { m } from "framer-motion";
-import { memo } from "react";
+import { memo, useState } from "react";
 import Image from "next/image";
 
 function HeroProductCard({ product }) {
+  const [hasError, setHasError] = useState(false);
   if (!product) return null;
 
   const cardVariants = {
@@ -17,7 +18,8 @@ function HeroProductCard({ product }) {
   const imageSrc = product.imageUrl;
   const isImageUrl =
     typeof imageSrc === "string" &&
-    (imageSrc.startsWith("/") || imageSrc.startsWith("http"));
+    (imageSrc.startsWith("/") || imageSrc.startsWith("http")) &&
+    !hasError;
 
   return (
     <m.div
@@ -45,10 +47,7 @@ function HeroProductCard({ product }) {
               height={750}
               quality={90}
               sizes="(max-width: 768px) 100vw, 500px"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextSibling.style.display = "flex";
-              }}
+              onError={() => setHasError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100 text-6xl opacity-20">

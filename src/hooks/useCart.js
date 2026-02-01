@@ -1,4 +1,5 @@
 // hooks/useCart.js
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addToCart,
@@ -23,10 +24,12 @@ export const useCart = () => {
   const cartTotal = useSelector(selectCartTotal);
   const cartItemsCount = useSelector(selectCartItemsCount);
 
-  // New SAFE approach for selecting item by id:
-  const getCartItem = (id) => {
-    return useSelector((state) => selectCartItemById(id)(state));
-  };
+  // No illegal nested hooks here. 
+  // If we need an item by ID, we should handle it in the component or via a selector passed to useSelector directly.
+  const getCartItem = useCallback((id) => {
+    // This is just a helper, it shouldn't call hooks
+    return cartItems.find(item => item.id === id);
+  }, [cartItems]);
 
   return {
     // State

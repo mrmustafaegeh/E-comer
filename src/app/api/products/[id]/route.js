@@ -1,59 +1,56 @@
-import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
-
-export async function getProductByIdData(id) {
-  try {
-    if (!id || id === 'undefined' || id === '[id]') return null;
-
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-
-    const product = await db
-      .collection("products")
-      .findOne({ _id: new ObjectId(id) });
-
-    if (!product) return null;
-
-    return {
-      ...product,
-      _id: product._id.toString(),
-      id: product._id.toString(),
-      title: product.title || product.name,
-      name: product.name || product.title,
-      offerPrice: product.salePrice || product.offerPrice || null,
-    };
-  } catch (err) {
-    console.error("getProductByIdData error:", err);
-    return null;
-  }
-}
+import { getProductById, updateProduct, deleteProduct } from "@/services/productService";
+import { productSchema } from "@/validators/productValidator";
+import { verifySession } from "@/lib/session";
 
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    const product = await getProductByIdData(id);
+    const product = await getProductById(id);
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    const response = NextResponse.json(product);
-
-    // ✅ Product details cache for 5 minutes
-    response.headers.set(
-      "Cache-Control",
-      process.env.NODE_ENV === "production"
-        ? "public, s-maxage=300, stale-while-revalidate=600"
-        : "private, max-age=30"
-    );
-
-    return response;
+    return NextResponse.json(product, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
   } catch (err) {
-    console.error("PRODUCT DETAIL API ERROR:", err);
-    return NextResponse.json(
-      { error: "Failed to load product" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to load product" }, { status: 500 });
+  }
+}
+
+export async function PUT(request, { params }) {
+  try {
+    const session = await verifySession();
+    if (!session || !session.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const validatedData = productSchema.partial().parse(body);
+
+    const updated = await updateProduct(id, validatedData);
+    return NextResponse.json(updated);
+  } catch (err) {
+    return NextResponse.json({ error: "Update failed", details: err.message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    const session = await verifySession();
+    if (!session || !session.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    await deleteProduct(id);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }
