@@ -17,7 +17,11 @@
     "setup:admin": "node scripts/setup-admin-indexes.mjs",
     "analyze:queries": "node scripts/analyze-slow-queries.mjs",
     "optimize-images": "node scripts/optimize-images.js",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "test": "vitest",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@eslint/js": "^9.39.2",
@@ -34,7 +38,6 @@
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "cloudinary": "^2.8.0",
-    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.22",
     "glob": "^13.0.0",
     "gsap": "^3.14.2",
@@ -63,18 +66,27 @@
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^7.0.2",
     "@next/bundle-analyzer": "^15.5.9",
+    "@playwright/test": "^1.58.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.9.11",
     "critters": "^0.0.23",
     "cssnano": "^7.1.2",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "jsdom": "^27.4.0",
+    "mongodb-memory-server": "^11.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "terser": "^5.46.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }
