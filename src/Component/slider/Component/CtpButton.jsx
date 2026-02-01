@@ -11,44 +11,30 @@ const CTAButtons = () => {
     >
       <m.button
         whileHover={{
-          scale: 1.05,
-          boxShadow: "0 20px 40px rgba(99, 102, 241, 0.4)",
+          scale: 1.02,
         }}
-        whileTap={{ scale: 0.95 }}
-        className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden"
+        whileTap={{ scale: 0.98 }}
+        className="group relative px-10 py-4 bg-gray-900 text-white font-medium text-lg rounded-full overflow-hidden transition-all hover:bg-black"
       >
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          Shop Now
+        <span className="relative z-10 flex items-center justify-center gap-3">
+          Explore Collection
           <m.svg
-            className="w-5 h-5"
+            className="w-4 h-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            animate={{ x: [0, 5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 7l5 5m0 0l-5 5m5-5H6"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </m.svg>
         </span>
-        <m.div
-          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
-          initial={{ x: "-100%" }}
-          whileHover={{ x: 0 }}
-          transition={{ duration: 0.3 }}
-        />
       </m.button>
 
       <m.button
-        whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.15)" }}
-        whileTap={{ scale: 0.95 }}
-        className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/20 transition-all"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="px-10 py-4 bg-transparent text-gray-900 font-medium text-lg rounded-full border border-gray-300 hover:border-gray-900 transition-colors"
       >
-        Browse Collection
+        View Lookbook
       </m.button>
     </m.div>
   );

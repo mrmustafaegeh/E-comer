@@ -123,19 +123,19 @@ export default function Header() {
         transition={{ duration: 0.45 }}
         className={`sticky top-0 z-50 transition-all ${
           isScrolled
-            ? "bg-white/95 backdrop-blur-lg shadow-xl border-b border-blue-100"
-            : "bg-white/80 backdrop-blur-sm shadow-sm"
+            ? "bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm"
+            : "bg-white/80 backdrop-blur-sm border-b border-transparent"
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* LOGO */}
-            <MotionDiv whileHover={{ scale: 1.04 }}>
-              <Link href="/" className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">QC</span>
+            <MotionDiv whileHover={{ scale: 1.02 }}>
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                  <span className="text-white font-serif font-bold text-xl tracking-tighter">Q</span>
                 </div>
-                <span className="ml-3 text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                <span className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
                   {safeT("common.siteTitle", "QuickCart")}
                 </span>
               </Link>
@@ -148,9 +148,9 @@ export default function Header() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${isActive(
-                        item.href
-                      )}`}
+                      className={`px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive(item.href) ? "text-black" : "text-gray-500 hover:text-black"
+                      }`}
                     >
                       {item.label}
                     </Link>
@@ -172,11 +172,11 @@ export default function Header() {
                 {/* CART */}
                 <Link
                   href="/cart"
-                  className="relative p-3 rounded-xl bg-gradient-to-r from-gray-50 to-white shadow hover:from-blue-50 hover:to-blue-100 transition"
+                  className="relative p-2.5 rounded-full hover:bg-gray-100 transition-colors"
                   aria-label="Cart"
                 >
                   <svg
-                    className="w-6 h-6 text-gray-700"
+                    className="w-6 h-6 text-gray-900"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -184,15 +184,15 @@ export default function Header() {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                      strokeWidth={1.5}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                     />
                   </svg>
                   {cartCount > 0 && (
                     <MotionSpan
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full text-xs h-6 w-6 flex items-center justify-center"
+                      className="absolute -top-1 -right-1 bg-black text-white rounded-full text-[10px] h-5 w-5 flex items-center justify-center font-bold"
                     >
                       {cartCount > 99 ? "99+" : cartCount}
                     </MotionSpan>

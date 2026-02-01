@@ -30,24 +30,23 @@ export default function ProductPagination({ page, totalPages, onPageChange }) {
   };
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center gap-1">
       {/* Previous Button */}
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        className="px-4 py-2 text-gray-500 hover:text-black disabled:opacity-20 disabled:hover:text-gray-500 transition"
       >
-        <ChevronLeft className="w-4 h-4" />
-        <span className="hidden sm:inline">Previous</span>
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
       {/* Page Numbers */}
-      <div className="hidden sm:flex items-center gap-1">
+      <div className="hidden sm:flex items-center gap-2">
         {getPageNumbers().map((pageNum, index) =>
           pageNum === "..." ? (
             <span
               key={`ellipsis-${index}`}
-              className="px-4 py-2.5 text-gray-400"
+              className="px-3 py-2 text-gray-300"
             >
               ...
             </span>
@@ -55,10 +54,10 @@ export default function ProductPagination({ page, totalPages, onPageChange }) {
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
-              className={`min-w-[44px] px-4 py-2.5 rounded-lg font-medium transition ${
+              className={`min-w-[40px] h-10 flex items-center justify-center text-sm font-medium transition-all ${
                 page === pageNum
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  ? "text-black border-b-2 border-black"
+                  : "text-gray-400 hover:text-black"
               }`}
             >
               {pageNum}
@@ -68,7 +67,7 @@ export default function ProductPagination({ page, totalPages, onPageChange }) {
       </div>
 
       {/* Mobile Page Indicator */}
-      <div className="sm:hidden px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-gray-700">
+      <div className="sm:hidden text-sm font-medium text-gray-900 mx-4">
         {page} / {totalPages}
       </div>
 
@@ -76,10 +75,9 @@ export default function ProductPagination({ page, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        className="px-4 py-2 text-gray-500 hover:text-black disabled:opacity-20 disabled:hover:text-gray-500 transition"
       >
-        <span className="hidden sm:inline">Next</span>
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-5 h-5" />
       </button>
     </div>
   );

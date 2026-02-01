@@ -1,5 +1,3 @@
-// Component/products/HeroProductCard.jsx
-
 import { m } from "framer-motion";
 import { memo } from "react";
 import Image from "next/image";
@@ -7,116 +5,89 @@ import Image from "next/image";
 function HeroProductCard({ product }) {
   if (!product) return null;
 
-  // ✅ Simplified animation - no complex floating
   const cardVariants = {
     initial: { opacity: 0, scale: 0.95 },
     animate: {
       opacity: 1,
       scale: 1,
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.5, ease: "easeOut" },
     },
   };
 
   const imageSrc = product.imageUrl;
-  const fallbackEmoji = product.emoji;
   const isImageUrl =
     typeof imageSrc === "string" &&
     (imageSrc.startsWith("/") || imageSrc.startsWith("http"));
-
-  const safeGradient =
-    typeof product.gradient === "string" && product.gradient.trim().length > 0
-      ? product.gradient
-      : "from-blue-500 to-purple-600";
-
-  const rating =
-    product.rating !== undefined && product.rating !== null
-      ? Number(product.rating)
-      : null;
 
   return (
     <m.div
       variants={cardVariants}
       initial="initial"
       animate="animate"
-      className="relative group"
+      className="relative group w-full max-w-md mx-auto"
     >
-      {/* ✅ Static glow - no animation */}
-      <div
-        className={`absolute -inset-1 bg-gradient-to-r ${safeGradient} rounded-2xl blur opacity-30`}
-      />
+      {/* Soft shadow instead of glow */}
+      <div className="absolute inset-0 bg-black/5 rounded-[2.5rem] blur-3xl transform translate-y-10" />
 
-      {/* Card */}
-      <div className="relative bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl p-8 backdrop-blur-xl border border-white/10">
-        {/* ✅ Image with PROPER optimization for LCP */}
-        <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-700 mb-6 flex items-center justify-center">
+      {/* Card - Minimalist White or Transparent */}
+      <div className="relative bg-white rounded-[2rem] p-6 shadow-2xl border border-gray-100 overflow-hidden">
+        
+        {/* Image Area */}
+        <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gray-50 mb-6">
           {isImageUrl ? (
             <Image
               src={imageSrc}
               alt={product.title || "Product"}
-              className="w-full h-full object-cover"
-              priority // ✅ CRITICAL: Preload this image
-              fetchPriority="high" // ✅ Browser hint
-              width={528}
-              height={528}
-              quality={85}
-              sizes="(max-width: 768px) 90vw, 528px"
+              className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out"
+              priority
+              fetchPriority="high"
+              width={600}
+              height={750}
+              quality={90}
+              sizes="(max-width: 768px) 100vw, 500px"
               onError={(e) => {
-                // ✅ Fallback on error
                 e.currentTarget.style.display = "none";
                 e.currentTarget.nextSibling.style.display = "flex";
               }}
             />
           ) : (
-            <div className="text-9xl" aria-label={product.title}>
-              {fallbackEmoji || "✨"}
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-6xl opacity-20">
+              {product.emoji || "✨"}
             </div>
           )}
         </div>
 
-        {/* Info */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-xl font-semibold text-white line-clamp-2">
+        {/* Info Area - Clean Typography */}
+        <div className="space-y-3 px-2">
+          <div className="flex justify-between items-start">
+             <h3 className="text-2xl font-medium text-gray-900 tracking-tight leading-tight">
               {product.title || "Untitled Product"}
             </h3>
-
-            {rating !== null && !Number.isNaN(rating) && (
-              <div
-                className="flex items-center gap-1 shrink-0"
-                aria-label={`Rating: ${rating} out of 5`}
-              >
-                <svg
-                  className="w-5 h-5 text-yellow-400 fill-current"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                </svg>
-                <span className="text-white font-medium">
-                  {rating.toFixed(1)}
-                </span>
-              </div>
-            )}
+            {product.discount && (
+               <span className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                 {product.discount}
+               </span>
+             )}
           </div>
 
-          <div className="flex items-end justify-between">
-            <div>
-              {product.oldPrice && (
-                <p className="text-sm text-gray-400 line-through">
-                  {product.oldPrice}
-                </p>
-              )}
-              <p className="text-2xl font-bold text-white">
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-semibold text-gray-900 tracking-tight">
                 {product.price || ""}
-              </p>
+              </span>
+              {product.oldPrice && (
+                <span className="text-lg text-gray-400 line-through font-light">
+                  {product.oldPrice}
+                </span>
+              )}
             </div>
-
-            {product.discount && (
-              <div
-                className={`px-4 py-2 bg-gradient-to-r ${safeGradient} text-white text-sm font-bold rounded-full`}
-              >
-                {product.discount}
-              </div>
+            
+            {/* Minimal Rating */}
+            {product.rating > 0 && (
+                <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full">
+                  <span className="text-sm font-medium text-gray-900">{product.rating}</span>
+                  <svg className="w-4 h-4 text-black fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
             )}
           </div>
         </div>

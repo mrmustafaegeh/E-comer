@@ -55,132 +55,98 @@ function ProductCard({ product }) {
 
   return (
     <article
-      className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200 cursor-pointer"
+      className="group bg-white rounded-none border border-transparent hover:border-gray-200 transition-all duration-300 cursor-pointer relative"
       onClick={() => router.push(`/products/${product._id}`)}
     >
-      {/* Image Container - ✅ Optimized */}
-      <div className="relative overflow-hidden bg-gray-50 aspect-square">
+      {/* Image Container */}
+      <div className="relative overflow-hidden aspect-[4/5] bg-[#F4F4F5]">
         {!imageError ? (
           <Image
             src={product.image || "/images/default-product.png"}
             alt={product.title}
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            quality={75}
+            quality={80}
             loading="lazy"
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <span className="text-4xl">📦</span>
+          <div className="w-full h-full flex items-center justify-center text-gray-300">
+             <span className="text-4xl text-gray-300">✦</span>
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
+        {/* Badges - Minimal Top Left */}
+        <div className="absolute top-0 left-0 p-3 flex flex-col gap-2 pointer-events-none">
           {discount > 0 && (
-            <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md">
-              -{discount}%
+            <span className="bg-white text-black text-[10px] font-bold uppercase tracking-widest px-2 py-1 shadow-sm">
+              Sale -{discount}%
             </span>
           )}
-          {product.rating >= 4.5 && (
-            <span className="bg-yellow-400 text-gray-900 px-2.5 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
-              <Star className="w-3 h-3 fill-current" aria-hidden="true" />
-              {product.rating}
+          {product.rating >= 4.8 && (
+            <span className="bg-black text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 shadow-sm">
+              Best Seller
             </span>
           )}
         </div>
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button - Hidden until hover to reduce clutter */}
         <button
           onClick={handleToggleWishlist}
-          className={`absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-sm transition-all duration-200 ${
+          className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-300 z-20 ${
             isWishlisted
-              ? "bg-red-500 text-white shadow-lg"
-              : "bg-white/90 text-gray-600 hover:bg-red-500 hover:text-white"
+              ? "bg-white text-red-500 shadow-sm opacity-100"
+              : "bg-white/80 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0"
           }`}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`} />
         </button>
 
-        {/* Quick Add Overlay */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4">
+        {/* Quick Add - Slide Up */}
+        <div className="absolute inset-x-0 bottom-0 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className="w-full bg-white text-gray-900 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Add to cart"
+            className="w-full bg-black text-white py-3 font-medium text-xs uppercase tracking-widest hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <ShoppingCart className="w-4 h-4" aria-hidden="true" />
-            {isAdding ? "Added!" : "Quick Add"}
+             {isAdding ? "Adding..." : "Add to Cart"}
           </button>
         </div>
       </div>
 
-      {/* Product Info */}
-      <div className="p-4">
-        {/* Category */}
-        <p className="text-xs text-indigo-600 font-medium uppercase tracking-wide mb-1">
-          {product.category}
-        </p>
-
+      {/* Product Info - Clean & Editorial */}
+      <div className="pt-4 pb-2 px-1">
+        
         {/* Title */}
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition-colors">
+        <h3 className="font-medium text-gray-900 mb-1 text-base leading-snug group-hover:underline decoration-1 underline-offset-4 decoration-gray-300 transition-all">
           {product.title}
         </h3>
 
-        {/* Rating */}
-        {product.rating > 0 && (
-          <div className="flex items-center gap-1 mb-3">
-            <div className="flex" role="img" aria-label={`Rating: ${product.rating} out of 5 stars`}>
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3.5 h-3.5 ${
-                    i < Math.floor(product.rating)
-                      ? "text-yellow-400 fill-current"
-                      : "text-gray-300"
-                  }`}
-                  aria-hidden="true"
-                />
-              ))}
-            </div>
-            <span className="text-xs text-gray-600 ml-1">
-              {product.rating.toFixed(1)} ({product.numReviews || 0})
-            </span>
-          </div>
-        )}
-
-        {/* Price */}
+        {/* Price & Rating Row */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-gray-900">
-              ${(product.offerPrice || product.price).toFixed(2)}
-            </span>
-            {product.offerPrice && (
-              <span className="text-sm text-gray-400 line-through">
-                ${product.price.toFixed(2)}
-              </span>
-            )}
-          </div>
+            <div className="flex items-baseline gap-2">
+                <span className="text-sm font-semibold text-gray-900">
+                ${(product.offerPrice || product.price).toFixed(2)}
+                </span>
+                {product.offerPrice && (
+                <span className="text-xs text-gray-400 line-through">
+                    ${product.price.toFixed(2)}
+                </span>
+                )}
+            </div>
 
-          {/* Stock Status */}
-          {product.stock !== undefined && (
-            <span
-              className={`text-xs font-medium ${
-                product.stock > 10
-                  ? "text-green-600"
-                  : product.stock > 0
-                  ? "text-orange-600"
-                  : "text-red-600"
-              }`}
-            >
-              {product.stock > 0 ? "In Stock" : "Out of Stock"}
-            </span>
-          )}
+            {/* Minimal Stock Dot */}
+            {product.stock !== undefined && (
+                <div className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? "bg-green-500" : "bg-red-500"}`} title={product.stock > 0 ? "In Stock" : "Out of Stock"} />
+            )}
         </div>
+
+        {/* Category (Optional, Keep it very subtle) */}
+        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">
+          {product.category}
+        </p>
       </div>
     </article>
   );

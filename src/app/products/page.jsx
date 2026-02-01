@@ -77,44 +77,46 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <div className="mb-6">
+    <div className="min-h-screen bg-white">
+      {/* Filters Full Width */}
+      <div className="w-full">
           <ProductFilters
             localFilters={localFilters}
             setLocalFilters={setLocalFilters}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
           />
-        </div>
+      </div>
 
+      <div className="max-w-[1600px] mx-auto px-6 lg:px-12 pb-24">
+        
         {/* Loading indicator for background fetches */}
         {isFetching && !isLoading && (
           <div className="text-center mb-4">
-            <span className="text-sm text-blue-600">Updating products...</span>
+            <span className="text-xs text-gray-500 uppercase tracking-widest">Updating...</span>
           </div>
         )}
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-32">
             <LoadingSpinner />
           </div>
         ) : products.length === 0 ? (
-          <div className="py-20">
+          <div className="py-20 text-center">
+            <div className="text-6xl mb-6">🔍</div>
             <EmptyState
               message={
                 hasActiveFilters
-                  ? "No products match your filters. Try adjusting your search criteria."
-                  : "No products found"
+                  ? "We couldn't find any matches. Try different filters."
+                  : "No products available yet."
               }
             />
             {hasActiveFilters && (
               <div className="flex justify-center mt-6">
                 <button
                   onClick={clearFilters}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                  className="text-black underline underline-offset-4 hover:text-gray-600 font-medium text-sm"
                 >
                   Clear all filters
                 </button>
@@ -123,19 +125,19 @@ export default function ProductsPage() {
           </div>
         ) : (
           <>
-            {/* Results count */}
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {products.length} of {total} products
+            {/* Results count minimal */}
+            <div className="mb-8 text-xs text-gray-400 uppercase tracking-widest text-right">
+              {products.length} Items
             </div>
 
             {/* Product Grid */}
-            <div className="mb-8">
+            <div className="mb-16">
               <ProductList products={products} />
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center">
+              <div className="flex justify-center border-t border-gray-100 pt-12">
                 <ProductPagination
                   page={page}
                   totalPages={totalPages}

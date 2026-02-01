@@ -27,7 +27,7 @@ export function useProducts(filters = {}) {
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
 
-      return await get("/products", params);
+      return await get("products", params);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
@@ -38,7 +38,7 @@ export function useProducts(filters = {}) {
 export function useFeaturedProducts() {
   return useQuery({
     queryKey: ["products", "featured"],
-    queryFn: () => get("/products/featured"),
+    queryFn: () => get("products/featured"),
     staleTime: 10 * 60 * 1000, // 10 minutes - featured rarely changes
     cacheTime: 30 * 60 * 1000, // 30 minutes
   });
@@ -47,7 +47,7 @@ export function useFeaturedProducts() {
 export function useHeroProducts() {
   return useQuery({
     queryKey: ["products", "hero"],
-    queryFn: () => get("/hero-products"),
+    queryFn: () => get("hero-products"),
     staleTime: 10 * 60 * 1000,
     cacheTime: 30 * 60 * 1000,
   });
@@ -56,7 +56,7 @@ export function useHeroProducts() {
 export function useProduct(id) {
   return useQuery({
     queryKey: ["products", id],
-    queryFn: () => get(`/products/${id}`),
+    queryFn: () => get(`products/${id}`),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -65,7 +65,7 @@ export function useProduct(id) {
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
-    queryFn: () => get("/categories"),
+    queryFn: () => get("category"),
     staleTime: 30 * 60 * 1000, // Categories rarely change
     cacheTime: 60 * 60 * 1000, // 1 hour
   });

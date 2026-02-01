@@ -105,16 +105,16 @@ function AnimatedHeroSection({ initialProducts = [] }) {
     <LazyMotion features={domAnimation}>
       <section
         ref={heroRef}
-        className="hero-section relative bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 overflow-hidden"
-        style={{ minHeight: "100vh" }}
+        className="hero-section relative bg-[#F1F2F4] overflow-hidden" 
+        style={{ minHeight: "90vh" }}
         aria-label="Hero section"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-cyan-900/20 pointer-events-none" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 min-h-screen flex items-center">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center w-full">
-            {/* Left Column */}
-            <div className="space-y-10 text-center lg:text-left">
+        {/* Subtle texture or noise if desired, but keeping it clean for now */}
+        
+        <div className="relative z-10 max-w-[1600px] mx-auto px-6 lg:px-12 py-20 min-h-[90vh] flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center w-full">
+            {/* Left Column - Content */}
+            <div className="space-y-8 text-center lg:text-left order-2 lg:order-1">
               <div className="min-h-[32px]">
                 {/* 
                   Note: Suspense/Dynamic imports with ssr:false usually don't need Suspense on server, 

@@ -40,15 +40,15 @@ const Footer = () => {
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
-      className="mt-auto bg-gradient-to-br from-gray-900 to-gray-800 text-gray-300 relative overflow-hidden"
+      className="mt-auto bg-[#111827] text-gray-300 relative overflow-hidden"
     >
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Background Pattern - subtle noise/texture is fine, or remove */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
         <div
           className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-            backgroundSize: "20px 20px",
+           style={{
+            backgroundImage: `radial-gradient(#ffffff 1px, transparent 0)`,
+            backgroundSize: "24px 24px",
           }}
         />
       </div>
@@ -63,10 +63,10 @@ const Footer = () => {
               whileInView={{ x: 0, opacity: 1 }}
               className="flex items-center mb-4"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-lg">QC</span>
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-3">
+                <span className="text-black font-bold text-lg">QC</span>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold text-white tracking-tight">
                 {safeTranslate("common.siteTitle", "QuickCart")}
               </span>
             </motion.div>

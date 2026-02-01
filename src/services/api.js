@@ -133,6 +133,7 @@ export const get = async (url, params = {}) => {
     return res.data;
   } catch (error) {
     console.error(`GET ${url} error:`, {
+      resolvedUrl: error.config?.url,
       status: error.response?.status,
       data: error.response?.data,
       environment: process.env.NODE_ENV,
