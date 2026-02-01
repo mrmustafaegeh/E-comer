@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { get, put } from "../../services/api";
 import { User, Mail, MapPin, Phone, Camera, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -172,7 +173,13 @@ export default function ProfilePage() {
                     <div className="relative group">
                         <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-md">
                             {formData.image ? (
-                                <img src={formData.image} alt="Profile" className="w-full h-full object-cover" />
+                                <Image 
+                                    src={formData.image} 
+                                    alt="Profile" 
+                                    fill
+                                    className="object-cover"
+                                    sizes="96px"
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                     <User size={40} />

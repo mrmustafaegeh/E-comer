@@ -26,7 +26,7 @@ export default function AdminCreateProduct() {
       if (result?.id || result?._id) {
         // Success - redirect to products list
         setTimeout(() => {
-          router.push("/admin/products");
+          router.push("/admin/admin-products");
           router.refresh();
         }, 1000);
       } else {

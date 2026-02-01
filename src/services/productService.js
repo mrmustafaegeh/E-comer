@@ -1,155 +1,154 @@
-import { get } from "./api";
+import clientPromise from "@/lib/mongodb";
+import { transformProducts } from "@/lib/transformers";
 
-export const productService = {
-  // Get all products
-  getProducts: async (params = {}) => {
-    try {
-      console.log("🛒 Fetching products...");
-      return await get("products", params); // No leading slash, no /api prefix
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      return {
-        products: [],
-        total: 0,
-        message: "Failed to load products",
-        error: error.message,
-      };
+export async function getProducts(params = {}) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const collection = db.collection("products");
+
+    const search = (params.search || "").trim();
+    const category = (params.category || "").trim();
+
+    const page = Math.max(1, Number(params.page || 1));
+    const limit = Math.min(48, Math.max(1, Number(params.limit || 24)));
+
+    const minPriceRaw = params.minPrice;
+    const maxPriceRaw = params.maxPrice;
+
+    const minPrice =
+      minPriceRaw !== undefined && minPriceRaw !== ""
+        ? Number(minPriceRaw)
+        : null;
+    const maxPrice =
+      maxPriceRaw !== undefined && maxPriceRaw !== ""
+        ? Number(maxPriceRaw)
+        : null;
+
+    // Build filters
+    const filters = {};
+
+    // Category filter
+    if (category && category !== "all") {
+      filters.category = category.toLowerCase();
     }
-  },
 
-  // Get single product
-  getProduct: async (id) => {
-    try {
-      console.log(`📦 Fetching product ${id}...`);
-      return await get(`products/${id}`);
-    } catch (error) {
-      console.error(`Error fetching product ${id}:`, error);
-      throw error;
+    // Price filter
+    if (Number.isFinite(minPrice) || Number.isFinite(maxPrice)) {
+      const priceConditions = [];
+      const priceFilter = {};
+      if (Number.isFinite(minPrice)) priceFilter.$gte = minPrice;
+      if (Number.isFinite(maxPrice)) priceFilter.$lte = maxPrice;
+
+      priceConditions.push({ price: priceFilter });
+      priceConditions.push({
+        salePrice: {
+          ...priceFilter,
+          $ne: null,
+        },
+      });
+
+      filters.$or = priceConditions;
     }
-  },
 
-  // Get categories
-  getCategories: async () => {
-    try {
-      console.log("📂 Fetching categories...");
-
-      // Try dedicated categories endpoint first
-      try {
-        const categories = await get("category"); // Your API uses /api/category
-        if (categories && Array.isArray(categories)) {
-          return categories;
-        }
-      } catch (categoriesError) {
-        console.log("Categories endpoint error, extracting from products...");
-      }
-
-      // Fallback: extract from products
-      const response = await get("products");
-      const products = response.products || response || [];
-
-      if (Array.isArray(products)) {
-        const categories = [
-          ...new Set(
-            products
-              .map((p) => p.category)
-              .filter((category) => category && typeof category === "string")
-          ),
-        ];
-        return categories;
-      }
-
-      return [];
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      return [];
+    // Search filter
+    if (search) {
+      filters.$text = { $search: search };
     }
-  },
 
-  // Get products by category
-  getProductsByCategory: async (category) => {
-    try {
-      console.log(`🏷️ Fetching products in category "${category}"...`);
-      const response = await get("products", { category });
-      const products = response.products || response || [];
+    const skip = (page - 1) * limit;
 
-      if (category && Array.isArray(products)) {
-        return products.filter(
-          (p) =>
-            p.category && p.category.toLowerCase() === category.toLowerCase()
-        );
-      }
+    // Projection
+    const projection = {
+      name: 1,
+      title: 1,
+      price: 1,
+      salePrice: 1,
+      oldPrice: 1,
+      discount: 1,
+      image: 1,
+      thumbnail: 1,
+      emoji: 1,
+      category: 1,
+      rating: 1,
+      numReviews: 1,
+      featured: 1,
+      isFeatured: 1,
+      stock: 1,
+      createdAt: 1,
+      slug: 1,
+    };
 
-      return products;
-    } catch (error) {
-      console.error(`Error fetching products by category ${category}:`, error);
-      return [];
+    const [products, total] = await Promise.all([
+      collection
+        .find(filters, { projection })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+      collection.countDocuments(filters),
+    ]);
+
+    // Transform products using centralized utility
+    const transformedProducts = transformProducts(products);
+
+    return {
+      products: transformedProducts,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("ProductService getProducts Error:", error);
+    throw new Error("Failed to fetch products");
+  }
+}
+
+export async function createProduct(productData) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const collection = db.collection("products");
+
+    // Standardize category
+    const finalData = {
+      ...productData,
+      category: productData.category.toLowerCase(),
+    };
+
+    // Generate slug
+    const slug = (productData.slug || productData.name || productData.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    // Check existing
+    const existing = await collection.findOne({ slug });
+    if (existing) {
+      throw new Error("A product with this slug already exists");
     }
-  },
 
-  // Featured products
-  async getFeaturedProducts() {
-    try {
-      console.log("⭐ Fetching featured products...");
+    const doc = {
+      ...finalData,
+      slug,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-      // Try hero-products endpoint first
-      try {
-        const response = await get("hero-products");
-        if (response.success && Array.isArray(response.products)) {
-          return response.products;
-        }
-      } catch (heroError) {
-        console.log("Hero products endpoint error, trying fallback...");
-      }
+    const result = await collection.insertOne(doc);
 
-      // Fallback: fetch all and filter
-      console.log("Filtering from all products...");
-      const response = await this.getProducts();
-      const allProducts = response.products || response || [];
+    return {
+      ...doc,
+      _id: result.insertedId.toString(),
+      id: result.insertedId.toString(),
+    };
+  } catch (error) {
+    console.error("ProductService createProduct Error:", error);
+    throw error;
+  }
+}
 
-      if (!Array.isArray(allProducts)) {
-        console.error("Invalid products data structure:", response);
-        return [];
-      }
-
-      // Filter featured products
-      const featuredProducts = allProducts
-        .filter((p) => p.featured === true || p.isFeatured === true)
-        .slice(0, 4);
-
-      return featuredProducts;
-    } catch (error) {
-      console.error("Featured products error:", error);
-      return [];
-    }
-  },
-
-  // Search products
-  searchProducts: async (query, params = {}) => {
-    try {
-      console.log(`🔍 Searching for "${query}"...`);
-      const allParams = { ...params, search: query }; // Your API uses "search" not "q"
-      const response = await get("products", allParams);
-      return response.products || response || [];
-    } catch (error) {
-      console.error("Search error:", error);
-
-      // Fallback client-side search
-      const response = await this.getProducts();
-      const products = response.products || response || [];
-
-      if (query && Array.isArray(products)) {
-        const searchTerm = query.toLowerCase();
-        return products.filter(
-          (p) =>
-            (p.title && p.title.toLowerCase().includes(searchTerm)) ||
-            (p.name && p.name.toLowerCase().includes(searchTerm)) ||
-            (p.description &&
-              p.description.toLowerCase().includes(searchTerm)) ||
-            (p.category && p.category.toLowerCase().includes(searchTerm))
-        );
-      }
-
-      return products;
-    }
-  },
-};
+export async function getProductById(id) {
+  // Placeholder
+}

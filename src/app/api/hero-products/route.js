@@ -1,22 +1,8 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { transformProducts } from "@/lib/transformers";
 
 export const runtime = "nodejs";
-
-function formatMoney(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return null;
-  return `$${num.toFixed(2)}`;
-}
-
-function calcDiscount(price, oldPrice) {
-  const p = Number(price);
-  const o = Number(oldPrice);
-  if (!Number.isFinite(p) || !Number.isFinite(o) || o <= 0 || p >= o)
-    return null;
-  const pct = Math.round(((o - p) / o) * 100);
-  return `-${pct}%`;
-}
 
 // Shared data fetching logic
 export async function getHeroProductsData() {
@@ -36,7 +22,7 @@ export async function getHeroProductsData() {
         title: 1,
         price: 1,
         salePrice: 1,
-        oldPrice: 1,
+        oldPrice: 1, // Legacy support
         discount: 1,
         rating: 1,
         image: 1,
@@ -46,35 +32,31 @@ export async function getHeroProductsData() {
       })
       .toArray();
 
-    const products = docs.map((p) => {
-      const rawPrice = p.salePrice ?? p.price ?? 0;
-      const rawOld = p.oldPrice ?? null;
-
-      const price = formatMoney(rawPrice) ?? "$0.00";
-      const oldPrice = formatMoney(rawOld);
-
-      const discount =
-        p.discount || (oldPrice ? calcDiscount(rawPrice, rawOld) : null) || "";
-
+    // Use centralized transformer
+    // AND adapt to specific frontend needs for Hero
+    const products = transformProducts(docs).map((p) => {
+      // Logic: If on sale, "price" is the sale price, "oldPrice" is the original price
+      const displayPrice = p.isOnSale ? p.formattedSalePrice : p.formattedPrice;
+      const displayOldPrice = p.isOnSale ? p.formattedPrice : (p.oldPrice ? p.formattedOldPrice : null);
+      
       return {
-        id: p._id.toString(),
-        _id: p._id.toString(),
-        title: p.title || p.name || "Untitled",
-        price,
-        offerPrice: rawPrice,
-        oldPrice,
-        discount,
-        rating: Number.isFinite(Number(p.rating)) ? Number(p.rating) : 4.5,
-        image: p.thumbnail || p.image || null,
+        ...p,
+        // Frontend component expects these specific names currently:
+        price: displayPrice,
+        oldPrice: displayOldPrice,
+        offerPrice: p.salePrice || p.price, // Number value
         imageUrl: p.thumbnail || p.image || null,
+        // Ensure rating is a number
+        rating: typeof p.rating === "number" ? p.rating : 4.5,
         emoji: p.emoji || null,
         gradient: p.gradient || "from-blue-500 to-purple-600",
       };
     });
 
-    const ms = Date.now() - startTime;
     if (process.env.NODE_ENV === "development") {
-      console.log(`🖼️ Hero products: ${products.length} in ${ms}ms`);
+      console.log(
+        `🖼️ Hero products: ${products.length} in ${Date.now() - startTime}ms`
+      );
     }
     
     return products;

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
 import {
   X,
   Upload,
@@ -19,6 +20,7 @@ import {
   CheckCircle,
   Trash2,
 } from "lucide-react";
+
 
 // Validation Schema
 const schema = z.object({
@@ -389,15 +391,12 @@ export default function ProductForm({ initialValues = {}, onSaved }) {
           {/* Preview or Upload Placeholder */}
           {previewUrl ? (
             <div className="relative w-full max-w-md group">
-              <div className="relative w-full h-64 border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                <Image
-                  width={528} // ← ADD: original size
-                  height={528} // ← ADD: original size
-                  quality={85} // ← ADD: compression quality
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  src={previewUrl}
-                  alt="Product preview"
-                  className="w-full h-full object-contain"
+              <div className=" w-full h-64 border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <div
+                  className="w-full h-full bg-contain bg-no-repeat bg-center"
+                  style={{ backgroundImage: `url('${previewUrl}')` }}
+                  role="img"
+                  aria-label="Product preview"
                 />
                 {uploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../contexts/AuthContext";
@@ -332,10 +333,12 @@ function CheckoutContent() {
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
-                      <img
+                      <Image
                         src={item.imgSrc || item.image || "/images/placeholder.png"}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="64px"
                       />
                       <span className="absolute bottom-0 right-0 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded-tl-md">
                         x{item.qty}

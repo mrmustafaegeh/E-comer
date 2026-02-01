@@ -1,5 +1,6 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
+import { transformOrder } from "@/lib/transformers";
 import { getCurrentUser } from "@/lib/session";
 
 export async function GET(request) {
@@ -45,11 +46,7 @@ export async function GET(request) {
     ]);
 
     const response = NextResponse.json({
-      orders: orders.map((o) => ({
-        ...o,
-        _id: o._id.toString(),
-        id: o._id.toString(),
-      })),
+      orders: orders.map(transformOrder),
       total,
       page,
       limit,

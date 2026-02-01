@@ -89,3 +89,52 @@ export async function GET(request) {
     );
   }
 }
+
+export async function POST(request) {
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    const collection = db.collection("products");
+
+    const data = await request.json();
+
+    // Basic validation
+    if (!data.title || !data.price) {
+      return NextResponse.json(
+        { error: "Title and price are required" },
+        { status: 400 }
+      );
+    }
+
+    const newProduct = {
+      ...data,
+      name: data.title, // Ensure name is populated
+      price: Number(data.price),
+      salePrice: data.offerPrice ? Number(data.offerPrice) : 0,
+      stock: Number(data.stock || 0),
+      rating: { rate: 0, count: 0 },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Remove undefined fields
+    Object.keys(newProduct).forEach(key => 
+      newProduct[key] === undefined && delete newProduct[key]
+    );
+
+    const result = await collection.insertOne(newProduct);
+
+    return NextResponse.json({
+      ...newProduct,
+      _id: result.insertedId.toString(),
+      id: result.insertedId.toString()
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error("ADMIN PRODUCTS POST ERROR:", error);
+    return NextResponse.json(
+      { error: "Failed to create product" },
+      { status: 500 }
+    );
+  }
+}
