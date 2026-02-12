@@ -56,7 +56,7 @@ function ProductCard({ product }) {
   return (
     <article
       className="group bg-white rounded-none border border-transparent hover:border-gray-200 transition-all duration-300 cursor-pointer relative"
-      onClick={() => router.push(`/products/${product._id}`)}
+      onClick={() => router.push(`/products/${product.slug || product._id}`)}
     >
       {/* Image Container */}
       <div className="relative overflow-hidden aspect-[4/5] bg-[#F4F4F5]">
@@ -69,6 +69,7 @@ function ProductCard({ product }) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             quality={80}
             loading="lazy"
+            unoptimized={true}
             onError={() => setImageError(true)}
           />
         ) : (

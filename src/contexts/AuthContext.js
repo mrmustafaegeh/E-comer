@@ -26,12 +26,12 @@ export function AuthProvider({ children }) {
   const fetchUser = useCallback(async () => {
     try {
       // First get the session to check if user is authenticated
-      const sessionData = await get("/auth/session");
+      const sessionData = await get("/api/auth/session");
       
       if (sessionData?.user) {
         // Then get the full profile with image
         try {
-          const profileData = await get("/user/profile");
+          const profileData = await get("/api/user/profile");
           setUser({
             ...sessionData.user,
             ...profileData, // This will include the image
@@ -58,11 +58,11 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     try {
-      const data = await post("/auth/login", credentials);
+      const data = await post("/api/auth/login", credentials);
       
       // After login, fetch full profile including image
       try {
-        const profileData = await get("/user/profile");
+        const profileData = await get("/api/user/profile");
         setUser({
           ...data.user,
           ...profileData,
@@ -80,11 +80,11 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     try {
-      const data = await post("/auth/register", userData);
+      const data = await post("/api/auth/register", userData);
       
       // After register, fetch full profile including image
       try {
-        const profileData = await get("/user/profile");
+        const profileData = await get("/api/user/profile");
         setUser({
           ...data.user,
           ...profileData,
@@ -102,7 +102,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await post("/auth/logout", {});
+      await post("/api/auth/logout", {});
       setUser(null);
     } catch (err) {
       console.error("Logout failed:", err);
@@ -116,7 +116,7 @@ export function AuthProvider({ children }) {
     if (loading) return;
     
     try {
-      const data = await get("/user/profile");
+      const data = await get("/api/user/profile");
       if (data) {
         setUser(prevUser => ({
           ...prevUser,

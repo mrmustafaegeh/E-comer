@@ -30,19 +30,35 @@ export async function getProducts(params = {}) {
       ];
     }
 
-    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+    // Price Filtering
+    // Ensure we handle empty strings correctly (which typically come from URL params)
+    const hasMinPrice = params.minPrice !== undefined && params.minPrice !== "" && params.minPrice !== null;
+    const hasMaxPrice = params.maxPrice !== undefined && params.maxPrice !== "" && params.maxPrice !== null;
+
+    if (hasMinPrice || hasMaxPrice) {
       filters.$and = [];
       const priceFilter = {};
-      if (params.minPrice !== undefined) priceFilter.$gte = parseFloat(params.minPrice);
-      if (params.maxPrice !== undefined) priceFilter.$lte = parseFloat(params.maxPrice);
       
-      // Filter by either price OR salePrice
-      filters.$and.push({
-        $or: [
-          { price: priceFilter },
-          { salePrice: priceFilter }
-        ]
-      });
+      if (hasMinPrice) {
+        const minVal = parseFloat(params.minPrice);
+        if (!isNaN(minVal)) priceFilter.$gte = minVal;
+      }
+      
+      if (hasMaxPrice) {
+        const maxVal = parseFloat(params.maxPrice);
+        if (!isNaN(maxVal)) priceFilter.$lte = maxVal;
+      }
+      
+      // Only apply if we have valid price constraints
+      if (Object.keys(priceFilter).length > 0) {
+        // Filter by either price OR salePrice
+        filters.$and.push({
+          $or: [
+            { price: priceFilter },
+            { salePrice: priceFilter }
+          ]
+        });
+      }
     }
 
     const sort = {};

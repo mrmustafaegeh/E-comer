@@ -83,6 +83,7 @@ export default function ProductDetailClient({ product }) {
                     fill
                     className="object-cover transition-transform duration-1000 group-hover:scale-110"
                     priority
+                    unoptimized={true}
                     sizes="(max-width: 1024px) 100vw, 60vw"
                   />
                 </motion.div>
@@ -114,7 +115,7 @@ export default function ProductDetailClient({ product }) {
                         : "border-transparent opacity-40 hover:opacity-100 scale-95 hover:scale-100"
                     }`}
                   >
-                    <Image src={img} alt="Thumb" fill className="object-cover" />
+                    <Image src={img} alt="Thumb" fill className="object-cover" unoptimized={true} />
                   </button>
                 ))}
               </div>

@@ -6,6 +6,7 @@ import ClientTranslationProvider from "../Component/ClientTranslationProvider.js
 import ReduxProvider from "../providers/ReduxProvider.jsx";
 import ReactQueryProvider from "../providers/ReactQueryProvider.jsx";
 import { AuthProvider } from "../contexts/AuthContext.js";
+import ChatbotTrigger from "../chatbot/ChatbotTrigger.jsx";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import "./i18n.js";
@@ -57,6 +58,7 @@ export default function RootLayout({ children }) {
               <ClientTranslationProvider>
                 <Header />
                 <ScrollToTop />
+                <ChatbotTrigger />
                 <main id="main-content" className="flex-1 w-full">
                   {children}
                 </main>
