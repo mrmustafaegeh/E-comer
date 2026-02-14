@@ -69,6 +69,7 @@ export default function AIChatbot({ isOpen, onClose }) {
         content: data.response,
         products: data.products,
         action: data.action,
+        suggestedActions: data.suggestedActions || [],
         timestamp: new Date(),
       };
 
@@ -110,20 +111,20 @@ export default function AIChatbot({ isOpen, onClose }) {
   const quickActions = [
     { 
       icon: Sparkles, 
-      label: 'Surprise me', 
-      query: 'Show me your most popular products',
+      label: 'Find products', 
+      query: 'Show me your best products',
       color: 'from-purple-500 to-pink-500'
     },
     { 
       icon: Search, 
-      label: 'Find deals', 
-      query: 'What deals and sales do you have right now?',
+      label: 'Deals & Sales', 
+      query: 'What deals and sales do you have?',
       color: 'from-orange-500 to-red-500'
     },
     { 
       icon: Package, 
-      label: 'New arrivals', 
-      query: 'Show me new products',
+      label: 'Track order', 
+      query: 'How do I track my order?',
       color: 'from-blue-500 to-cyan-500'
     },
   ];
@@ -136,7 +137,7 @@ export default function AIChatbot({ isOpen, onClose }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="fixed bottom-24 right-6 w-[420px] h-[650px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 border border-gray-200"
+          className="fixed inset-x-0 bottom-0 md:bottom-6 md:right-6 md:left-auto md:inset-initial md:w-[440px] h-[100dvh] md:h-[700px] bg-white md:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 border-t md:border border-gray-200"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white p-4 flex items-center justify-between">
@@ -216,6 +217,21 @@ export default function AIChatbot({ isOpen, onClose }) {
                             <ShoppingCart className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                           </div>
                         </a>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Suggested Actions */}
+                  {message.suggestedActions && message.suggestedActions.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {message.suggestedActions.map((action, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleQuickAction(action)}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+                        >
+                          {action}
+                        </button>
                       ))}
                     </div>
                   )}
